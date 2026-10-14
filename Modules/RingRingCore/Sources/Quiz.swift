@@ -12,19 +12,19 @@ public enum QuizKind: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .cloze: "빈칸 채우기"
-        case .recall: "뜻 보고 쓰기"
-        case .choice: "사지선다"
-        case .dictation: "듣고 받아쓰기"
+        case .cloze: String(localized: "빈칸 채우기")
+        case .recall: String(localized: "뜻 보고 쓰기")
+        case .choice: String(localized: "사지선다")
+        case .dictation: String(localized: "듣고 받아쓰기")
         }
     }
 
     public var detail: String {
         switch self {
-        case .cloze: "가사에서 단어를 지웠습니다. 노래를 떠올리며 채워 보세요."
-        case .recall: "한국어 뜻만 보고 일본어를 직접 씁니다. 가장 어렵습니다."
-        case .choice: "네 개 중 하나를 고릅니다. 빠르게 훑을 때 좋습니다."
-        case .dictation: "가사 한 줄을 소리로 들려줍니다. 들은 대로 빈칸을 채워 보세요."
+        case .cloze: String(localized: "가사에서 단어를 지웠습니다. 노래를 떠올리며 채워 보세요.")
+        case .recall: String(localized: "한국어 뜻만 보고 일본어를 직접 씁니다. 가장 어렵습니다.")
+        case .choice: String(localized: "네 개 중 하나를 고릅니다. 빠르게 훑을 때 좋습니다.")
+        case .dictation: String(localized: "가사 한 줄을 소리로 들려줍니다. 들은 대로 빈칸을 채워 보세요.")
         }
     }
 

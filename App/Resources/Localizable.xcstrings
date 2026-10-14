@@ -2,6 +2,16 @@
   "sourceLanguage": "ko",
   "strings": {
     " · ": {},
+    "%+.1f초": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%+.1fs"
+          }
+        }
+      }
+    },
     "%.1f년": {
       "localizations": {
         "en": {
@@ -15,6 +25,17 @@
     "%@": {},
     "%@ · ": {},
     "%@ · %@": {},
+    "%@ · 일부만 해석한 추정": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · estimated from part of the song"
+          }
+        }
+      }
+    },
     "%@ — %@": {},
     "%@ 단어는 아직 없어요": {
       "localizations": {
@@ -22,6 +43,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No %@ words yet"
+          }
+        }
+      }
+    },
+    "%@, 최애": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, oshi"
           }
         }
       }
@@ -165,6 +196,28 @@
     "EXILE TRIBE": {},
     "Hello! Project": {},
     "KAWAII LAB.": {},
+    "LRCLIB 공유 오류 (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LRCLIB sharing error (%lld)"
+          }
+        }
+      }
+    },
+    "LRCLIB 오류 (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LRCLIB error (%lld)"
+          }
+        }
+      }
+    },
     "LRCLIB에 공유": {
       "localizations": {
         "en": {
@@ -177,6 +230,16 @@
     },
     "STARDUST": {},
     "STARTO": {},
+    "YouTube 영상": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YouTube video"
+          }
+        }
+      }
+    },
     "♪": {},
     "「%@」에 맞는 단어가 없어요": {
       "localizations": {
@@ -209,6 +272,17 @@
         }
       }
     },
+    "가사 서버가 잠시 응답하지 않습니다. 조금 뒤에 다시 찾아 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The lyrics server isn't responding right now. Try again in a little while."
+          }
+        }
+      }
+    },
     "가사 싱크 %@": {
       "localizations": {
         "en": {
@@ -235,6 +309,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld with lyric examples"
+          }
+        }
+      }
+    },
+    "가사 응답 형식이 예상과 다릅니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The lyrics response wasn't in the expected format."
           }
         }
       }
@@ -309,6 +394,17 @@
         }
       }
     },
+    "가사 한 줄을 소리로 들려줍니다. 들은 대로 빈칸을 채워 보세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A lyric line is read aloud. Fill in the blank with what you hear."
+          }
+        }
+      }
+    },
     "가사 해석": {
       "localizations": {
         "en": {
@@ -319,12 +415,12 @@
         }
       }
     },
-    "가사 해석은 기기 안에서 처리됩니다. 가사 원문이나 학습 기록은 어디로도 올라가지 않습니다. 노래 영상은 YouTube에서 재생됩니다.": {
+    "가사 해석은 기기 안에서 처리됩니다. 학습 기록은 어디로도 올라가지 않고, 직접 붙여넣은 가사는 「LRCLIB에 공유」를 켰을 때만 올라갑니다. 노래 영상은 YouTube에서 재생됩니다.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lyric analysis runs on your device. The original lyrics and your study history are never uploaded anywhere. Song videos play on YouTube."
+            "value": "Lyric analysis runs on your device. Your study history is never uploaded, and lyrics you paste in are sent only if you turn on “Share to LRCLIB”. Song videos play on YouTube."
           }
         }
       }
@@ -379,6 +475,17 @@
         }
       }
     },
+    "가사를 찾지 못했습니다. 곡명이나 아티스트를 손봐서 다시 시도해 보세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find the lyrics. Try adjusting the title or artist."
+          }
+        }
+      }
+    },
     "가사에서 단어를 담으면 그 단어로 문제를 만듭니다.": {
       "localizations": {
         "en": {
@@ -395,6 +502,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save words from lyrics and you can review them here."
+          }
+        }
+      }
+    },
+    "가사에서 단어를 지웠습니다. 노래를 떠올리며 채워 보세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A word is missing from the lyric. Recall the song and fill it in."
           }
         }
       }
@@ -449,12 +567,32 @@
         }
       }
     },
+    "각 줄을 단어 뜻·문법과 함께 문장으로 번역합니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each line is translated as a sentence, along with word meanings and grammar."
+          }
+        }
+      }
+    },
     "개수": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Count"
+          }
+        }
+      }
+    },
+    "거의 맞았어요 — 형태가 다릅니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almost — a different form"
           }
         }
       }
@@ -485,6 +623,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Song info"
+          }
+        }
+      }
+    },
+    "곡 정보 요청이 너무 잦습니다. 잠시 뒤에 다시 시도해 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many song requests. Please try again shortly."
+          }
+        }
+      }
+    },
+    "곡 정보를 받지 못했습니다. 인터넷 연결을 확인해 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the song info. Check your internet connection."
+          }
+        }
+      }
+    },
+    "곡 정보를 받지 못했습니다. 잠시 뒤에 다시 시도해 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the song info. Please try again shortly."
           }
         }
       }
@@ -529,6 +700,17 @@
         }
       }
     },
+    "곡을 찾지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find the song."
+          }
+        }
+      }
+    },
     "곡이 없습니다": {
       "localizations": {
         "en": {
@@ -565,6 +747,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sharing…"
+          }
+        }
+      }
+    },
+    "공유를 시작하지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start sharing."
           }
         }
       }
@@ -625,6 +818,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open a song from a group and it collects here, with its breakdown and progress."
+          }
+        }
+      }
+    },
+    "기억났어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remembered"
           }
         }
       }
@@ -719,6 +922,17 @@
         }
       }
     },
+    "네 개 중 하나를 고릅니다. 빠르게 훑을 때 좋습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick one of four. Good for a quick pass."
+          }
+        }
+      }
+    },
     "노래 찾기": {
       "localizations": {
         "en": {
@@ -795,6 +1009,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Listen again"
+          }
+        }
+      }
+    },
+    "다시 볼까요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's look again"
           }
         }
       }
@@ -1049,6 +1273,16 @@
         }
       }
     },
+    "담은 순": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently saved"
+          }
+        }
+      }
+    },
     "답 입력": {
       "localizations": {
         "en": {
@@ -1079,6 +1313,17 @@
         }
       }
     },
+    "듣고 받아쓰기": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictation"
+          }
+        }
+      }
+    },
     "등급": {
       "localizations": {
         "en": {
@@ -1095,6 +1340,27 @@
           "stringUnit": {
             "state": "translated",
             "value": "Level distribution"
+          }
+        }
+      }
+    },
+    "등급 순": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By level"
+          }
+        }
+      }
+    },
+    "뜻 보고 쓰기": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write from meaning"
           }
         }
       }
@@ -1129,6 +1395,16 @@
         }
       }
     },
+    "랜덤 믹스": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Random mix"
+          }
+        }
+      }
+    },
     "링링": {
       "localizations": {
         "en": {
@@ -1145,6 +1421,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "RingRing · Learn Japanese through your oshi's songs"
+          }
+        }
+      }
+    },
+    "맞음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In sync"
           }
         }
       }
@@ -1219,6 +1505,16 @@
         }
       }
     },
+    "몰랐어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't know"
+          }
+        }
+      }
+    },
     "문법 · 표현": {
       "localizations": {
         "en": {
@@ -1239,6 +1535,46 @@
         }
       }
     },
+    "문장 번역을 끄면 각 줄에 단어 뜻과 문법만 표시됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With sentence translation off, each line shows only word meanings and grammar."
+          }
+        }
+      }
+    },
+    "문장 번역을 보려면 번역 파일을 한 번 받아야 합니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see sentence translations, download the translation files once."
+          }
+        }
+      }
+    },
+    "문장 번역을 쓸 수 있는지 확인하고 있습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking whether sentence translation is available."
+          }
+        }
+      }
+    },
+    "미리듣기 30초": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30-second preview"
+          }
+        }
+      }
+    },
     "미리듣기 30초 구간이라 가사가 따라가지 않습니다. 줄을 눌러 뜻을 볼 수 있습니다.": {
       "localizations": {
         "en": {
@@ -1255,6 +1591,27 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preview · no video found"
+          }
+        }
+      }
+    },
+    "바로 알았어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knew it instantly"
+          }
+        }
+      }
+    },
+    "발음 듣기": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hear pronunciation"
           }
         }
       }
@@ -1329,6 +1686,16 @@
         }
       }
     },
+    "보통": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        }
+      }
+    },
     "복습": {
       "localizations": {
         "en": {
@@ -1379,6 +1746,16 @@
         }
       }
     },
+    "복습 임박 순": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soonest"
+          }
+        }
+      }
+    },
     "복습 카드": {
       "localizations": {
         "en": {
@@ -1409,12 +1786,54 @@
         }
       }
     },
+    "복습할 단어가 없습니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No words to review"
+          }
+        }
+      }
+    },
+    "빈칸 채우기": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill in the blank"
+          }
+        }
+      }
+    },
+    "사전 + 시스템 번역": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictionary + system translation"
+          }
+        }
+      }
+    },
     "사전에 수록된 단어만 찾을 수 있습니다.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Only words in the dictionary can be found."
+          }
+        }
+      }
+    },
+    "사지선다": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple choice"
           }
         }
       }
@@ -1445,6 +1864,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voice-actor artists"
+          }
+        }
+      }
+    },
+    "세 유형을 섞어서 냅니다. 형식이 아니라 단어를 시험합니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mixes the question types. It tests the words, not the format."
           }
         }
       }
@@ -1495,6 +1924,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anison singers"
+          }
+        }
+      }
+    },
+    "아주 크게": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra large"
           }
         }
       }
@@ -1569,6 +2008,17 @@
         }
       }
     },
+    "안내 닫기": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss guide"
+          }
+        }
+      }
+    },
     "알림 권한이 거부되어 있습니다. 설정 > 알림 > 링링에서 켜 주세요.": {
       "localizations": {
         "en": {
@@ -1629,12 +2079,42 @@
         }
       }
     },
+    "어려운 단어": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hard words"
+          }
+        }
+      }
+    },
+    "어려운 단어 집중": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus on hard words"
+          }
+        }
+      }
+    },
     "없음": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "None"
+          }
+        }
+      }
+    },
+    "여러 곡에 나온 순": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the most songs"
           }
         }
       }
@@ -1679,6 +2159,17 @@
         }
       }
     },
+    "연주곡으로 등록된 트랙이라 가사가 없습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This track is listed as an instrumental, so it has no lyrics."
+          }
+        }
+      }
+    },
     "열기": {
       "localizations": {
         "en": {
@@ -1695,6 +2186,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Video"
+          }
+        }
+      }
+    },
+    "영상 검색을 잠시 사용할 수 없어 미리듣기로 재생합니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video search is unavailable for now, so the preview plays instead."
+          }
+        }
+      }
+    },
+    "영상을 찾을 수 없어 짧은 클립으로 재생합니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No video found, so a short clip plays instead."
+          }
+        }
+      }
+    },
+    "영상을 찾지 못했습니다 (%lld). 잠시 뒤에 다시 시도해 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find a video (%lld). Please try again shortly."
           }
         }
       }
@@ -1749,6 +2273,17 @@
         }
       }
     },
+    "오늘은 새 영상을 더 찾을 수 없습니다. 내일 다시 시도해 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No more new videos can be looked up today. Please try again tomorrow."
+          }
+        }
+      }
+    },
     "오늘의 추천": {
       "localizations": {
         "en": {
@@ -1799,6 +2334,17 @@
         }
       }
     },
+    "응답을 해석하지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't read the response."
+          }
+        }
+      }
+    },
     "이 가사로 공부하기": {
       "localizations": {
         "en": {
@@ -1819,12 +2365,44 @@
         }
       }
     },
+    "이 곡은 재생할 수 있는 영상을 찾지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find a playable video for this song."
+          }
+        }
+      }
+    },
+    "이 곡의 영상을 찾지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find a video for this song."
+          }
+        }
+      }
+    },
     "이 그룹의 곡을 아직 불러오지 못했습니다. 잠시 뒤 다시 열어 보세요.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "This group's songs couldn't be loaded yet. Try again in a moment."
+          }
+        }
+      }
+    },
+    "이 기기에서는 문장 번역을 쓸 수 없어 단어 뜻만 표시됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sentence translation isn't available on this device, so only word meanings are shown."
           }
         }
       }
@@ -1909,6 +2487,28 @@
         }
       }
     },
+    "인터넷 연결이 불안정해 곡을 불러오지 못했습니다. 연결을 확인한 뒤 다시 열어 주세요.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the song because the connection is unstable. Check it and open the song again."
+          }
+        }
+      }
+    },
+    "인터넷에 연결되어 있지 않아 가사를 찾지 못했습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find the lyrics because you're offline."
+          }
+        }
+      }
+    },
     "일본어 단어와 맞는 한국어 뜻 하나를 눌러 선택하세요.": {
       "localizations": {
         "en": {
@@ -1939,6 +2539,16 @@
         }
       }
     },
+    "일정에 올라온 %lld개를 가사 예문과 함께": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld due today, with lyric examples"
+          }
+        }
+      }
+    },
     "읽기, 뜻, 나온 가사와 다음 복습일을 확인하세요.": {
       "localizations": {
         "en": {
@@ -1965,6 +2575,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auto analysis"
+          }
+        }
+      }
+    },
+    "작게": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
           }
         }
       }
@@ -2035,6 +2655,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "All"
+          }
+        }
+      }
+    },
+    "정답": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct"
           }
         }
       }
@@ -2115,6 +2745,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rate how well you remembered and the next review date is set automatically."
+          }
+        }
+      }
+    },
+    "지금 올라온 카드가 없어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cards are due right now"
+          }
+        }
+      }
+    },
+    "지금은 올라온 카드가 없습니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cards are due right now"
           }
         }
       }
@@ -2239,6 +2889,26 @@
         }
       }
     },
+    "크게": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        }
+      }
+    },
+    "틀린 적 있는 %lld개만 골라서 냅니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the %lld words you've missed before"
+          }
+        }
+      }
+    },
     "평소에는 자동으로 해석하고, 저전력 모드에서는 줄을 누를 때만 해석합니다.": {
       "localizations": {
         "en": {
@@ -2289,6 +2959,17 @@
         }
       }
     },
+    "한국어 뜻만 보고 일본어를 직접 씁니다. 가장 어렵습니다.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See only the meaning and write the Japanese yourself. The hardest one."
+          }
+        }
+      }
+    },
     "항상": {
       "localizations": {
         "en": {
@@ -2299,12 +2980,33 @@
         }
       }
     },
+    "해석 %lld%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzed %lld%%"
+          }
+        }
+      }
+    },
     "해석 중": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Analyzing"
+          }
+        }
+      }
+    },
+    "헷갈렸어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsure"
           }
         }
       }

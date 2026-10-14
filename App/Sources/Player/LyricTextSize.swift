@@ -15,10 +15,10 @@ enum LyricTextSize: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .small: "작게"
-        case .medium: "보통"
-        case .large: "크게"
-        case .extraLarge: "아주 크게"
+        case .small: String(localized: "작게")
+        case .medium: String(localized: "보통")
+        case .large: String(localized: "크게")
+        case .extraLarge: String(localized: "아주 크게")
         }
     }
 

@@ -110,8 +110,8 @@ struct PracticeScreen: View {
             NavigationLink(value: QuizRoute(kind: nil, scope: .struggling)) {
                 PracticeRow(
                     symbol: "exclamationmark.arrow.circlepath",
-                    title: "어려운 단어 집중",
-                    detail: "틀린 적 있는 \(struggling)개만 골라서 냅니다",
+                    title: String(localized: "어려운 단어 집중"),
+                    detail: String(localized: "틀린 적 있는 \(struggling)개만 골라서 냅니다"),
                     badge: nil,
                     isProminent: false
                 )
@@ -124,10 +124,10 @@ struct PracticeScreen: View {
         NavigationLink(value: ReviewRoute()) {
             PracticeRow(
                 symbol: "clock.arrow.circlepath",
-                title: "복습 카드",
+                title: String(localized: "복습 카드"),
                 detail: stats.dueCount > 0
-                    ? "일정에 올라온 \(stats.dueCount)개를 가사 예문과 함께"
-                    : "지금은 올라온 카드가 없습니다",
+                    ? String(localized: "일정에 올라온 \(stats.dueCount)개를 가사 예문과 함께")
+                    : String(localized: "지금은 올라온 카드가 없습니다"),
                 badge: stats.dueCount > 0 ? "\(stats.dueCount)" : nil,
                 isProminent: stats.dueCount > 0
             )
@@ -139,8 +139,8 @@ struct PracticeScreen: View {
         NavigationLink(value: QuizRoute(kind: kind)) {
             PracticeRow(
                 symbol: kind?.symbol ?? "shuffle",
-                title: kind?.title ?? "랜덤 믹스",
-                detail: kind?.detail ?? "세 유형을 섞어서 냅니다. 형식이 아니라 단어를 시험합니다.",
+                title: kind?.title ?? String(localized: "랜덤 믹스"),
+                detail: kind?.detail ?? String(localized: "세 유형을 섞어서 냅니다. 형식이 아니라 단어를 시험합니다."),
                 badge: nil,
                 isProminent: false
             )

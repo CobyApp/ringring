@@ -53,7 +53,7 @@ struct QuizScreen: View {
                 summary
             }
         }
-        .navigationTitle(scope == .struggling ? "어려운 단어" : (kind?.title ?? "랜덤 믹스"))
+        .navigationTitle(scope == .struggling ? String(localized: "어려운 단어") : (kind?.title ?? String(localized: "랜덤 믹스")))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         // Only when there is no round yet. onAppear fires again every time the
@@ -336,9 +336,9 @@ struct QuizScreen: View {
 
     private func label(for outcome: QuizOutcome) -> String {
         switch outcome {
-        case .correct: "정답"
-        case .close: "거의 맞았어요 — 형태가 다릅니다"
-        case .wrong: "다시 볼까요"
+        case .correct: String(localized: "정답")
+        case .close: String(localized: "거의 맞았어요 — 형태가 다릅니다")
+        case .wrong: String(localized: "다시 볼까요")
         }
     }
 

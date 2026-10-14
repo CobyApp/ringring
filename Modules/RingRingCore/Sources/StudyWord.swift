@@ -111,12 +111,4 @@ public enum AnalysisEngineKind: String, Sendable, Codable {
     /// No nuance and a fairly literal sentence — but fast, offline for the words,
     /// and the same on every device.
     case plainTranslation
-
-    public var label: String {
-        switch self {
-        case .onDevice: "온디바이스 AI"
-        case .dictionary: "사전"
-        case .plainTranslation: "사전 + 시스템 번역"
-        }
-    }
 }

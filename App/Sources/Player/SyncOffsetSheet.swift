@@ -66,7 +66,7 @@ struct SyncOffsetSheet: View {
     }
 
     static func label(for offset: TimeInterval) -> String {
-        offset == 0 ? "맞음" : String(format: "%+.1f초", offset)
+        offset == 0 ? String(localized: "맞음") : String(format: String(localized: "%+.1f초"), offset)
     }
 
     /// Says which way it moved in the reader's own terms — the sign alone does
@@ -90,7 +90,7 @@ struct SyncOffsetSheet: View {
     }
 
     private func step(_ delta: TimeInterval) -> some View {
-        Button(String(format: "%+.1f초", delta)) {
+        Button(String(format: String(localized: "%+.1f초"), delta)) {
             session.lyricsOffset = LyricSync.stepped(session.lyricsOffset, by: delta)
             Haptics.tick()
         }

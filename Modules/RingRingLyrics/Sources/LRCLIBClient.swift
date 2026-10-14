@@ -20,10 +20,10 @@ public struct LRCLIBClient: Sendable {
 
         public var errorDescription: String? {
             switch self {
-            case .notFound: "가사를 찾지 못했습니다. 곡명이나 아티스트를 손봐서 다시 시도해 보세요."
-            case .instrumental: "연주곡으로 등록된 트랙이라 가사가 없습니다."
-            case .serverBusy: "가사 서버가 잠시 응답하지 않습니다. 조금 뒤에 다시 찾아 주세요."
-            case .offline: "인터넷에 연결되어 있지 않아 가사를 찾지 못했습니다."
+            case .notFound: String(localized: "가사를 찾지 못했습니다. 곡명이나 아티스트를 손봐서 다시 시도해 보세요.")
+            case .instrumental: String(localized: "연주곡으로 등록된 트랙이라 가사가 없습니다.")
+            case .serverBusy: String(localized: "가사 서버가 잠시 응답하지 않습니다. 조금 뒤에 다시 찾아 주세요.")
+            case .offline: String(localized: "인터넷에 연결되어 있지 않아 가사를 찾지 못했습니다.")
             case .transport(let message): message
             }
         }
@@ -345,13 +345,13 @@ public struct LRCLIBClient: Sendable {
             throw Failure.transport(error.localizedDescription)
         }
         guard let http = response as? HTTPURLResponse else {
-            throw Failure.transport("응답을 해석하지 못했습니다.")
+            throw Failure.transport(String(localized: "응답을 해석하지 못했습니다."))
         }
         if http.statusCode == 429 || (500..<600).contains(http.statusCode) {
             throw Failure.serverBusy(http.statusCode)
         }
         guard (200..<300).contains(http.statusCode) else {
-            throw Failure.transport("LRCLIB 공유 오류 (\(http.statusCode))")
+            throw Failure.transport(String(localized: "LRCLIB 공유 오류 (\(http.statusCode))"))
         }
     }
 
@@ -371,7 +371,7 @@ public struct LRCLIBClient: Sendable {
             throw Failure.transport(error.localizedDescription)
         }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw Failure.transport("공유를 시작하지 못했습니다.")
+            throw Failure.transport(String(localized: "공유를 시작하지 못했습니다."))
         }
         return try JSONDecoder().decode(Challenge.self, from: data)
     }
@@ -431,20 +431,20 @@ public struct LRCLIBClient: Sendable {
         }
 
         guard let http = response as? HTTPURLResponse else {
-            throw Failure.transport("응답을 해석하지 못했습니다.")
+            throw Failure.transport(String(localized: "응답을 해석하지 못했습니다."))
         }
         guard http.statusCode != 404 else { throw Failure.notFound }
         if http.statusCode == 429 || (500..<600).contains(http.statusCode) {
             throw Failure.serverBusy(http.statusCode)
         }
         guard (200..<300).contains(http.statusCode) else {
-            throw Failure.transport("LRCLIB 오류 (\(http.statusCode))")
+            throw Failure.transport(String(localized: "LRCLIB 오류 (\(http.statusCode))"))
         }
 
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            throw Failure.transport("가사 응답 형식이 예상과 다릅니다.")
+            throw Failure.transport(String(localized: "가사 응답 형식이 예상과 다릅니다."))
         }
     }
 
