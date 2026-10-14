@@ -337,10 +337,12 @@ public final class MusicPlayerController {
             }
         }
         persistDirectory()
-        return YouTubeClient.rank(published, for: track, channels: ids, strict: true)
-            + YouTubeClient.rank(published, for: track, channels: ids, strict: false).filter { loose in
-                !YouTubeClient.rank(published, for: track, channels: ids, strict: true).contains(loose)
-            }
+        // Off the main actor: thousands of uploads are still real work, and
+        // this runs as a song opens, while the lyrics and their analysis load.
+        let candidates = published
+        return await Task.detached(priority: .userInitiated) {
+            YouTubeClient.rankAll(candidates, for: track, channels: ids)
+        }.value
     }
 
     /// Saves the directory, in order — see `VideoDirectoryWriter`.

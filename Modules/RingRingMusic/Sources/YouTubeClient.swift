@@ -316,8 +316,10 @@ public struct YouTubeClient: Sendable {
         let wantedArtist = fold(track.artist)
         let scored: [(Candidate, Int)] = candidates.compactMap { candidate in
             let title = fold(candidate.title)
-            let channel = fold(candidate.channelTitle)
             guard wantedTitles.contains(where: title.contains) else { return nil }
+            // Folded only for the few that are the song: a deep channel is
+            // thousands of uploads, and most are something else.
+            let channel = fold(candidate.channelTitle)
             // Nothing to study in an instrumental.
             if title.contains("instrumental") || title.contains("inst.") || title.contains("offvocal") { return nil }
             var score = 1
@@ -358,16 +360,43 @@ public struct YouTubeClient: Sendable {
             .map(\.0)
     }
 
+    /// The strict matches, best first, then the looser takes the strict pass
+    /// dropped — each video once.
+    ///
+    /// The strict list is worked out once. It used to be recomputed for every
+    /// loose candidate, over every upload of every channel: with thousands of
+    /// uploads and hundreds of hashtag Shorts carrying the title, that froze
+    /// the player for minutes and got the app killed.
+    public static func rankAll(_ candidates: [Candidate], for track: Track, channels: [String]) -> [Candidate] {
+        let strict = rank(candidates, for: track, channels: channels, strict: true)
+        let taken = Set(strict.map(\.videoID))
+        return strict + rank(candidates, for: track, channels: channels, strict: false)
+            .filter { !taken.contains($0.videoID) }
+    }
+
+    /// Whitespace, punctuation, symbols and the long-vowel mark: what
+    /// `fold` drops. The same classes as `[\s\p{P}\p{S}ーｰ]`.
+    private static let foldDropped = CharacterSet.whitespacesAndNewlines
+        .union(.punctuationCharacters)
+        .union(.symbols)
+        .union(CharacterSet(charactersIn: "ーｰ"))
+
     /// Lowercased, no spaces or punctuation, so 「わたしの一番かわいいところ / FRUITS ZIPPER」
     /// and 「FRUITS ZIPPER「わたしの一番かわいいところ」MV」 agree about the title.
     ///
     /// Width-folded first, so 「ＬＯＶＥ」 and 「LOVE」 agree, and the long-vowel
     /// mark is dropped with the punctuation: the catalogue writes 「LOVEマシ-ン」
     /// with a hyphen where the video says 「LOVEマシーン」.
+    ///
+    /// A scalar filter rather than a regex: it runs over every upload title of
+    /// every channel, and the regex made that the slowest part of a lookup.
     static func fold(_ text: String) -> String {
-        text.precomposedStringWithCompatibilityMapping
-            .lowercased()
-            .replacingOccurrences(of: #"[\s\p{P}\p{S}ーｰ]"#, with: "", options: .regularExpression)
+        var kept = String.UnicodeScalarView()
+        for scalar in text.precomposedStringWithCompatibilityMapping.lowercased().unicodeScalars
+        where !foldDropped.contains(scalar) {
+            kept.append(scalar)
+        }
+        return String(kept)
     }
 
     /// The ways a catalogue title may appear inside a video title.
