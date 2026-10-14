@@ -40,6 +40,8 @@ public struct LRCLIBClient: Sendable {
     }
 
     private static let host = "https://lrclib.net"
+    /// How many of the later spellings are asked at once.
+    static let spellingsInFlight = 2
     /// lrclib asks clients to identify themselves.
     private static let userAgent = "RingRing/1.1 (https://github.com/CobyApp/ringring; Japanese study app)"
 
@@ -99,29 +101,77 @@ public struct LRCLIBClient: Sendable {
         // Its timings would land on the wrong lines, but the words are the
         // words; kept as plain text if nothing better turns up.
         var differentEdit: Record?
-        for variant in Self.queryVariants(artist: artist, title: title) {
-            try Task.checkCancellation()
-            do {
-                let results = try await search(artist: variant.artist, title: variant.title)
+        /// Reads one spelling's answer. Returns the lyrics when it settles the
+        /// song; throws for the failures that end the whole lookup.
+        func consider(_ outcome: Result<[Record], Error>) throws -> Lyrics? {
+            switch outcome {
+            case .success(let results):
                 if let best = Self.best(from: results, duration: duration) {
                     return try Self.lyrics(from: best)
                 }
                 if differentEdit == nil, let sheet = Self.bestRegardlessOfLength(from: results) {
                     differentEdit = sheet
                 }
-            } catch let error where error.isCancellation {
+            case .failure(let error) where error.isCancellation:
                 throw error
-            } catch let error as Failure where error.isServerWide {
+            case .failure(let error as Failure) where error.isServerWide:
                 // Down for every query alike. Going through the remaining
                 // spellings only piled more requests on a struggling server
                 // and kept the reader waiting for the same answer.
                 throw error
-            } catch {
+            case .failure(let error):
                 // Kept, not thrown: a later spelling may still succeed, and if
                 // none does the user deserves the network's reason rather than
                 // "not found".
                 transportFailure = transportFailure ?? error
             }
+            return nil
+        }
+
+        let variants = Self.queryVariants(artist: artist, title: title)
+        // The catalogue's own spelling alone first: it is the one that finds
+        // most songs, and it learns whether the server is up before more
+        // requests go out.
+        if let first = variants.first {
+            try Task.checkCancellation()
+            let outcome = await Result { try await search(artist: first.artist, title: first.title) }
+            if let lyrics = try consider(outcome) { return lyrics }
+        }
+        // The other spellings two at a time, still taken in order: a later
+        // spelling's answer is used only once every earlier one has come back
+        // without one. One after another, a song LRCLIB does not have kept the
+        // reader on 「Finding lyrics」 for four to eight seconds; all at once,
+        // the burst drew an occasional 503 from a free community server.
+        let rest = Array(variants.dropFirst())
+        if !rest.isEmpty {
+            let found: Lyrics? = try await withThrowingTaskGroup(of: (Int, Result<[Record], Error>).self) { group in
+                var started = 0
+                func startNext() {
+                    guard started < rest.count else { return }
+                    let index = started
+                    let variant = rest[index]
+                    started += 1
+                    group.addTask {
+                        (index, await Result { try await search(artist: variant.artist, title: variant.title) })
+                    }
+                }
+                for _ in 0..<Self.spellingsInFlight { startNext() }
+                var arrived: [Int: Result<[Record], Error>] = [:]
+                var next = 0
+                for try await (index, outcome) in group {
+                    startNext()
+                    arrived[index] = outcome
+                    while let ready = arrived.removeValue(forKey: next) {
+                        next += 1
+                        if let lyrics = try consider(ready) {
+                            group.cancelAll()
+                            return lyrics
+                        }
+                    }
+                }
+                return nil
+            }
+            if let found { return found }
         }
         if let differentEdit {
             return try Self.lyrics(from: differentEdit, asPlain: true)
@@ -592,6 +642,18 @@ extension LRCLIBClient.Failure {
         switch self {
         case .serverBusy, .offline: true
         default: false
+        }
+    }
+}
+
+private extension Result where Failure == any Error {
+    /// The outcome of async work, kept rather than thrown — so the spellings
+    /// tried in parallel can be read back in their order.
+    init(_ body: () async throws -> Success) async {
+        do {
+            self = .success(try await body())
+        } catch {
+            self = .failure(error)
         }
     }
 }
