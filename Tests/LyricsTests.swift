@@ -406,9 +406,15 @@ private final class ScriptedLRCLIB: URLProtocol, @unchecked Sendable {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
+    /// Requests now arrive in parallel (the later spellings), so the script
+    /// is read under a lock.
+    private static let lock = NSLock()
+
     override func startLoading() {
-        let status = Self.statuses.isEmpty ? 200 : Self.statuses.removeFirst()
-        Self.requests += 1
+        let status = Self.lock.withLock {
+            Self.requests += 1
+            return Self.statuses.isEmpty ? 200 : Self.statuses.removeFirst()
+        }
         let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: status == 200 ? Self.body : Data())
@@ -453,5 +459,76 @@ struct LyricsServerBusyTests {
         }
         // One search and its single retry — not one per spelling.
         #expect(ScriptedLRCLIB.requests == 2)
+    }
+}
+
+/// Answers by the `artist_name` asked for, each after its own delay — so a
+/// test can make a later spelling answer before an earlier one.
+private final class RoutedLRCLIB: URLProtocol, @unchecked Sendable {
+    nonisolated(unsafe) static var routes: [String: (delay: TimeInterval, body: String)] = [:]
+
+    static func session(_ routes: [String: (delay: TimeInterval, body: String)]) -> URLSession {
+        self.routes = routes
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [RoutedLRCLIB.self]
+        return URLSession(configuration: configuration)
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let items = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let artist = items.first { $0.name == "artist_name" }?.value ?? ""
+        let route = Self.routes[artist] ?? (0, "[]")
+        let url = request.url!
+        DispatchQueue.global().asyncAfter(deadline: .now() + route.delay) { [weak self] in
+            guard let self else { return }
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            self.client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            self.client?.urlProtocol(self, didLoad: Data(route.body.utf8))
+            self.client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+
+    override func stopLoading() {}
+}
+
+@Suite("가사 표기들을 동시에 묻기", .serialized)
+struct ParallelSpellingTests {
+    private func sheet(_ words: String) -> String {
+        #"[{"trackName":"秘密のアティチュード","artistName":"x","duration":212,"instrumental":false,"plainLyrics":"\#(words)","syncedLyrics":"[00:01.00]\#(words)"}]"#
+    }
+
+    @Test("늦게 와도 앞선 표기의 답을 쓴다")
+    func anEarlierSpellingWinsEvenWhenSlower() async throws {
+        // FRUITS ZIPPER's aliases are asked in roster order: フルーツジッパー,
+        // then ふるっぱー. The second answers first; the first must still win.
+        let session = RoutedLRCLIB.session([
+            "フルーツジッパー": (0.4, sheet("先の表記の歌詞")),
+            "ふるっぱー": (0, sheet("後の表記の歌詞")),
+        ])
+        let lyrics = try await LRCLIBClient(session: session, retryDelay: .zero)
+            .lyrics(artist: "FRUITS ZIPPER", title: "秘密のアティチュード", duration: 212)
+        #expect(lyrics.lines.first?.text == "先の表記の歌詞")
+    }
+
+    @Test("모든 표기에 없으면 기다림이 표기 수만큼 늘지 않는다")
+    func aMissDoesNotWaitOncePerSpelling() async {
+        // Every request takes 0.3s. One after another, the spellings after the
+        // first would take well over a second; together, about one delay.
+        let slow = (0.3, "[]")
+        let session = RoutedLRCLIB.session([
+            "FRUITS ZIPPER": slow, "フルーツジッパー": slow, "ふるっぱー": slow, "": slow,
+        ])
+        let start = ContinuousClock.now
+        await #expect(throws: LRCLIBClient.Failure.self) {
+            try await LRCLIBClient(session: session, retryDelay: .zero)
+                .lyrics(artist: "FRUITS ZIPPER", title: "秘密のアティチュード")
+        }
+        // First spelling: search + free-text fallback, 0.6s. Then the two
+        // alias spellings together (0.6s) and the title alone (0.3s): ~1.5s.
+        // One after another the same requests take ~2.1s.
+        #expect(ContinuousClock.now - start < .seconds(1.9))
     }
 }
