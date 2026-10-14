@@ -101,7 +101,7 @@ public extension IdolGroup {
     /// Ids were checked against the catalogue rather than typed from memory —
     /// MORE STAR was confirmed by its own song 「WITH KAWAII論」, which is how
     /// its label was settled too.
-    public static let all: [IdolGroup] = [
+    static let all: [IdolGroup] = [
         // KAWAII LAB. (ASOBISYSTEM)
         .init(id: "1617607581", name: "FRUITS ZIPPER", readingKo: "후룻파", label: .kawaiiLab, hue: 0.92,
               youtubeChannels: ["UCQG8tNnV4hKetLhMb4MopHQ", Channels.kawaiiLab, "UCB_jIxmkTjjAHyVZUD-kf4w"],
@@ -361,7 +361,7 @@ public extension IdolGroup {
     /// romanised credit still finds its group. Short aliases are skipped for
     /// matching: 「東北産」 is safe, a two-letter nickname would catch other
     /// artists' names.
-    public static func group(forArtist artist: String) -> IdolGroup? {
+    static func group(forArtist artist: String) -> IdolGroup? {
         let wanted = fold(artist)
         if let byName = all.first(where: { wanted.contains(fold($0.name)) }) {
             return byName
@@ -375,7 +375,7 @@ public extension IdolGroup {
         text.lowercased().replacingOccurrences(of: " ", with: "")
     }
 
-    public static func group(id: String) -> IdolGroup? {
+    static func group(id: String) -> IdolGroup? {
         all.first { $0.id == id }
     }
 
