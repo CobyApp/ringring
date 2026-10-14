@@ -120,16 +120,33 @@ public struct YouTubeClient: Sendable {
         return found
     }
 
-    /// Keeps the videos that are about as long as the song — from a little
-    /// shorter (a radio edit) to half again as long (an MV with a prologue).
-    /// Videos the lengths do not cover are kept: not knowing is not a reason
-    /// to drop the group's own upload.
-    public static func aboutTheSongsLength(_ candidates: [Candidate], track: Track, durations: [String: TimeInterval]) -> [Candidate] {
+    /// The candidates by how well their length fits the song.
+    ///
+    /// A video far shorter than the song is a Short, a teaser or a TV spot;
+    /// one far longer is a medley, a making-of or a whole concert. Those are
+    /// dropped outright — falling back to them played a fourteen-second Short
+    /// as the song. Of the rest, the ones about the song's length (a radio
+    /// edit to an MV with a prologue) come first, then the long takes, each
+    /// group in rank order. A video whose length is not known is kept with the
+    /// fitting ones: not knowing is not a reason to drop the group's upload.
+    public static func byLength(_ candidates: [Candidate], track: Track, durations: [String: TimeInterval]) -> [Candidate] {
         guard track.duration > 0 else { return candidates }
-        return candidates.filter { candidate in
-            guard let seconds = durations[candidate.videoID] else { return true }
-            return seconds >= track.duration * 0.6 && seconds <= track.duration * 1.6
+        let song = track.duration
+        var fitting: [Candidate] = []
+        var long: [Candidate] = []
+        for candidate in candidates {
+            guard let seconds = durations[candidate.videoID] else {
+                fitting.append(candidate)
+                continue
+            }
+            if seconds < max(song * 0.5, 30) || seconds > song * 2.5 { continue }
+            if seconds >= song * 0.6 && seconds <= song * 1.6 {
+                fitting.append(candidate)
+            } else {
+                long.append(candidate)
+            }
         }
+        return fitting + long
     }
 
     private struct DurationsPayload: Decodable {
@@ -312,29 +329,52 @@ public struct YouTubeClient: Sendable {
     ///   itself; false also admits the takes a strict pass would drop (live,
     ///   lyric videos), for when the strict pass found nothing at all.
     public static func rank(_ candidates: [Candidate], for track: Track, channels: [String] = [], strict: Bool) -> [Candidate] {
+        scored(candidates, for: track, channels: channels, strict: strict)
+            .filter { strict ? $0.score > 0 : true }
+            .sorted { $0.score > $1.score }
+            .map(\.candidate)
+    }
+
+    /// Every candidate that names the song, with its score. `rank` sorts and
+    /// filters these; the matching report prints them.
+    static func scored(_ candidates: [Candidate], for track: Track, channels: [String] = [], strict: Bool) -> [(candidate: Candidate, score: Int)] {
         let wantedTitles = titleKeys(track.title)
+        let quotedTitles = quotedForms(track.title)
         let wantedArtist = fold(track.artist)
-        let scored: [(Candidate, Int)] = candidates.compactMap { candidate in
+        return candidates.compactMap { candidate -> (candidate: Candidate, score: Int)? in
             let title = fold(candidate.title)
-            guard wantedTitles.contains(where: title.contains) else { return nil }
+            let key = wantedTitles.first(where: title.contains)
+            // A title too short to be a key on its own (「虹」, 「W」) counts
+            // only where the video quotes it: 『虹』 is the song, 『虹の向こう側』
+            // is not.
+            guard key != nil || quotedTitles.contains(where: candidate.title.precomposedStringWithCompatibilityMapping.contains) else {
+                return nil
+            }
+            // What the video says besides the song's name. The penalties below
+            // read this, so a song called 「いえなかったことば〜ありがとう〜」 is not
+            // marked down as a thank-you clip for its own title.
+            let rest = key.map { title.replacingOccurrences(of: $0, with: "") } ?? title
+            let raw = candidate.title.precomposedStringWithCompatibilityMapping.lowercased()
             // Folded only for the few that are the song: a deep channel is
             // thousands of uploads, and most are something else.
             let channel = fold(candidate.channelTitle)
             // Nothing to study in an instrumental.
-            if title.contains("instrumental") || title.contains("inst.") || title.contains("offvocal") { return nil }
+            if rest.contains("instrumental") || rest.contains("offvocal") { return nil }
             var score = 1
             // The group's own channel: this is the video, whatever it is called.
             if channels.contains(candidate.channelID) { score += 8 }
-            if title.contains("mv") || title.contains("musicvideo") || title.contains("ミュージックビデオ") { score += 4 }
+            if Self.musicVideo.contains(where: rest.contains) { score += 4 }
             // Tagged as the video itself, not a clip that mentions the MV.
-            if title.contains("【mv】") || title.contains("[mv]") || title.contains("(mv)") { score += 2 }
+            // Read from the raw title: folding strips the brackets.
+            let taggedMV = ["【mv】", "[mv]", "(mv)", "【music video】", "official music video"].contains(where: raw.contains)
+            if taggedMV { score += 2 }
             // Announcements and clips: 「MV公開」, 「MVティザー公開」, TV debuts,
             // collaborations, hashtag-titled Shorts.
-            for clip in ["公開", "期間限定", "初披露", "コラボ", "聴いてくれた", "ありがとう"] where title.contains(clip) {
+            for clip in ["公開", "期間限定", "初披露", "コラボ", "聴いてくれた", "ありがとう"] where rest.contains(clip) {
                 score -= 5
             }
             if candidate.title.filter({ $0 == "#" }).count >= 2 { score -= 4 }
-            if title.contains("official") || title.contains("公式") { score += 1 }
+            if rest.contains("official") || rest.contains("公式") { score += 1 }
             if channel.contains(wantedArtist) || channel.contains("official") { score += 3 }
             // The labels behind the roster. Their uploads are the official
             // videos even when the channel is not named after the group.
@@ -343,21 +383,65 @@ public struct YouTubeClient: Sendable {
             if channel.hasSuffix("topic") { score += 2 }
             // A re-upload with burnt-in subtitles is somebody else's copy of
             // the video, and it outranked the original on 「MV」 alone.
-            for copy in ["자막", "한글", "sub", "字幕", "번역", "翻訳", "kansub", "eng"] where title.contains(copy) || channel.contains(copy) {
+            for copy in ["자막", "한글", "sub", "字幕", "번역", "翻訳", "kansub", "eng"] where rest.contains(copy) || channel.contains(copy) {
                 score -= 4
             }
-            for bad in ["dancepractice", "ダンスプラクティス", "cover", "カバー", "踊ってみた", "歌ってみた", "teaser", "ティザー", "makingof", "メイキング", "reaction", "short", "focus", "フォーカス"] where title.contains(bad) {
+            // The song's length and on the group's own channel, often with
+            // 「MV」 in the title — and still not the video to study with: a
+            // cheering guide (コール動画), a choreography video 「-MV edition-」,
+            // a making-of, a view-count milestone. Heavier than the rest, so
+            // even the group's channel bonus cannot carry one past the MV.
+            for notTheVideo in Self.notTheVideo where rest.contains(notTheVideo) {
+                score -= 8
+            }
+            // A cheering guide that is tagged 【MV】 is the MV with the calls
+            // on screen (iLiFE! publishes its MVs that way): marked down so a
+            // clean MV wins, not so far that bare audio does.
+            if Self.cheeringGuide.contains(where: rest.contains) { score -= taggedMV ? 2 : 8 }
+            for bad in Self.otherTakes where rest.contains(bad) {
                 score -= 3
             }
-            for soft in ["live", "ライブ", "lyric", "リリック"] where title.contains(soft) {
+            // A dance version of the MV is an MV, but the drama cut is the one
+            // to watch first when both exist.
+            if rest.contains("dancever") { score -= 1 }
+            for soft in ["live", "ライブ", "lyric", "リリック"] where rest.contains(soft) {
                 score -= strict ? 3 : 1
             }
             return (candidate, score)
         }
-        return scored
-            .filter { strict ? $0.1 > 0 : true }
-            .sorted { $0.1 > $1.1 }
-            .map(\.0)
+    }
+
+    // The word lists below are matched against folded titles, so they are
+    // folded too: folding drops the long-vowel mark, and an unfolded 「コール動画」
+    // or 「カバー」 never matched anything.
+
+    static let musicVideo = ["mv", "musicvideo", "ミュージックビデオ", "musicclip", "ミュージッククリップ"].map(fold)
+
+    /// Videos that name the song and are not it.
+    static let notTheVideo = [
+        // Choreography and dance-along videos
+        "choreography", "振付", "振り付け", "振り動画", "振りコピ", "dancevideo", "dancetutorial",
+        // Making-of, behind the scenes, documentaries
+        "making", "メイキング", "behindthescene", "裏側", "密着", "documentary", "ドキュメンタリー", "offshot", "オフショット",
+        // View-count milestones
+        "回再生", "万回", "達成",
+    ].map(fold)
+
+    /// Cheering guides: the song with the fans' calls written over it.
+    static let cheeringGuide = ["cheeringguide", "コール動画", "応援動画", "応援歌", "callguide", "コールガイド"].map(fold)
+
+    /// Other takes of the song, marked down but not out.
+    static let otherTakes = [
+        "dancepractice", "ダンスプラクティス", "cover", "カバー", "踊ってみた", "歌ってみた",
+        "teaser", "ティザー", "予告", "reaction", "short", "focus", "フォーカス", "記念",
+    ].map(fold)
+
+    /// 「x」, 『x』, "x" and “x” around the title, for titles too short to
+    /// be a key.
+    static func quotedForms(_ title: String) -> [String] {
+        let core = title.precomposedStringWithCompatibilityMapping.trimmingCharacters(in: .whitespaces)
+        guard !core.isEmpty else { return [] }
+        return ["「\(core)」", "『\(core)』", "\"\(core)\"", "“\(core)”", "【\(core)】"]
     }
 
     /// The strict matches, best first, then the looser takes the strict pass
@@ -527,10 +611,18 @@ public struct VideoDirectory: Sendable {
                     if videos[id] == "" { videos[id] = nil }
                 }
             }
+            // Before 3, cheering guides, choreography videos 「-MV edition-」 and
+            // making-ofs could win over the MV, and those choices were kept for
+            // good. They are chosen again — from the channel lists kept here,
+            // so it costs a length lookup, not a search.
+            if matcher < 3 {
+                videos = videos.filter { $0.value.isEmpty }
+                alternates = [:]
+            }
         }
 
-        /// Bumped when finding improves enough that old misses deserve a retry.
-        public static let currentMatcher = 2
+        /// Bumped when finding improves enough that old answers deserve a retry.
+        public static let currentMatcher = 3
         private var matcher = Self.currentMatcher
 
         /// What is known about a song's video.

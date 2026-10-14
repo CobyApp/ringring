@@ -9,7 +9,8 @@ struct VideoDirectoryMissTests {
 
     @Test("옛 파일의 「없음」은 날짜가 없어 한 번 더 찾는다")
     func oldMissIsAskedAgain() throws {
-        let data = #"{"videos":{"1":"abc","2":""}}"#.data(using: .utf8)!
+        // No `misses` field, so no dates for the 「none」s.
+        let data = #"{"matcher":3,"videos":{"1":"abc","2":""}}"#.data(using: .utf8)!
         let snapshot = try JSONDecoder().decode(VideoDirectory.Snapshot.self, from: data)
         #expect(snapshot.misses.isEmpty)
         #expect(snapshot.lookup("1", now: now) == .video("abc"))

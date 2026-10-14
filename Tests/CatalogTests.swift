@@ -100,7 +100,7 @@ struct YouTubeClientTests {
         let short = YouTubeClient.Candidate(videoID: "short", title: "『わたしの一番かわいいところ』MV公開", channelTitle: "FRUITS ZIPPER")
         let mv = YouTubeClient.Candidate(videoID: "mv", title: "【MV】わたしの一番かわいいところ", channelTitle: "KAWAII LAB.")
         let unknown = YouTubeClient.Candidate(videoID: "x", title: "わたしの一番かわいいところ", channelTitle: "Topic")
-        let kept = YouTubeClient.aboutTheSongsLength([short, mv, unknown], track: track, durations: ["short": 24, "mv": 262])
+        let kept = YouTubeClient.byLength([short, mv, unknown], track: track, durations: ["short": 24, "mv": 262])
         #expect(kept.map(\.videoID) == ["mv", "x"])
     }
 
@@ -180,7 +180,9 @@ struct YouTubeClientTests {
 
     @Test("옛 목록 파일도 읽힌다")
     func decodesOldDirectory() throws {
-        let data = #"{"videos":{"1":"abc"}}"#.data(using: .utf8)!
+        // No `alternates` field. (Written by the current matcher: an older
+        // one's picks are redone, see `picksFromAnOlderMatcherAreRedone`.)
+        let data = #"{"matcher":3,"videos":{"1":"abc"}}"#.data(using: .utf8)!
         let snapshot = try JSONDecoder().decode(VideoDirectory.Snapshot.self, from: data)
         #expect(snapshot.videos == ["1": "abc"])
         #expect(snapshot.alternates.isEmpty)
@@ -300,6 +302,23 @@ struct VideoMatchingTests {
         #expect(snapshot.videos["2"] == "")
         #expect(snapshot.channels["UCx"]?.isDeep == false)
     }
+
+    @Test("매칭 규칙 3 이전에 고른 영상은 다시 고르고, 채널 목록은 남긴다")
+    func picksFromAnOlderMatcherAreRedone() throws {
+        let json = #"{"matcher":2,"videos":{"1":"choreo","2":""},"alternates":{"1":["mv"]},"misses":{"2":{"at":0,"permanent":true}},"channels":{"UCx":{"fetchedAt":0,"videos":[]}}}"#
+        let snapshot = try JSONDecoder().decode(VideoDirectory.Snapshot.self, from: Data(json.utf8))
+        #expect(snapshot.videos["1"] == nil)
+        #expect(snapshot.alternates["1"] == nil)
+        #expect(snapshot.videos["2"] == "")
+        #expect(snapshot.channels["UCx"] != nil)
+    }
+
+    @Test("지금 규칙으로 고른 영상은 그대로 둔다")
+    func currentPicksStay() throws {
+        let json = #"{"matcher":\#(VideoDirectory.Snapshot.currentMatcher),"videos":{"1":"mv"}}"#
+        let snapshot = try JSONDecoder().decode(VideoDirectory.Snapshot.self, from: Data(json.utf8))
+        #expect(snapshot.videos["1"] == "mv")
+    }
 }
 
 @Suite("채널 업로드 순위 매기기")
@@ -354,5 +373,105 @@ struct ChannelRankingTests {
         let start = ContinuousClock.now
         _ = YouTubeClient.rankAll(candidates, for: track, channels: [])
         #expect(ContinuousClock.now - start < .seconds(3))
+    }
+}
+
+/// Cases from the video matching report: the videos that won over a real MV.
+@Suite("MV가 아닌 영상에 지지 않기")
+struct NotTheMusicVideoTests {
+    private let groupChannel = "UCU0PgOXf0lxzVxN2TLzMJkw"
+    private let label = "UCW8Q9LBGGBgK6a-u0C0h95A"
+
+    private func first(_ candidates: [YouTubeClient.Candidate], _ track: Track, channels: [String]) -> String? {
+        YouTubeClient.rankAll(candidates, for: track, channels: channels).first?.videoID
+    }
+
+    @Test("레이블의 【MV】가 그룹 채널의 안무 영상을 이긴다")
+    func mvBeatsChoreography() {
+        let track = Track(id: "1", title: "倍倍FIGHT!", artist: "CANDY TUNE", duration: 253)
+        let candidates = [
+            .init(videoID: "choreo", title: "【Choreography Video -MV edition-】CANDY TUNE「倍倍FIGHT!」", channelTitle: "CANDY TUNE", channelID: groupChannel),
+            YouTubeClient.Candidate(videoID: "mv", title: "【MV】CANDY TUNE「倍倍FIGHT!」", channelTitle: "KAWAII LAB.", channelID: label),
+        ]
+        #expect(first(candidates, track, channels: [groupChannel, label]) == "mv")
+    }
+
+    @Test("응원법·콜 영상은 곡 음원보다 뒤로 간다")
+    func cheeringGuideSinks() {
+        let track = Track(id: "2", title: "DASH!!!", artist: "SWEET STEADY", duration: 186)
+        let channel = "UC5s_kUbxX3P1q6lmDgygD-w"
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "call", title: "【Cheering Guide】SWEET STEADY「DASH!!!」コール動画", channelTitle: "SWEET STEADY", channelID: channel),
+            YouTubeClient.Candidate(videoID: "song", title: "DASH!!!", channelTitle: "SWEET STEADY", channelID: channel),
+        ]
+        #expect(first(candidates, track, channels: [channel]) == "song")
+    }
+
+    @Test("장음 부호가 든 감점 단어도 걸린다")
+    func penaltiesWithALongVowelMarkMatch() {
+        // 「コール動画」 folds to 「コル動画」; the word list has to be folded too.
+        let track = Track(id: "7", title: "真夏日よ", artist: "乃木坂46", duration: 269)
+        let channel = "UCUzpZpX2wRYOk3J8QTFGxDg"
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "call", title: "乃木坂46 『真夏日よ』 コール動画 真夏の全国ツアー2025", channelTitle: "乃木坂46 OFFICIAL YouTube CHANNEL", channelID: channel),
+            YouTubeClient.Candidate(videoID: "memorial", title: "乃木坂46『真夏日よ』 明治神宮野球場公演 10thメモリアルムービー", channelTitle: "乃木坂46 OFFICIAL YouTube CHANNEL", channelID: channel),
+        ]
+        #expect(first(candidates, track, channels: [channel]) == "memorial")
+    }
+
+    @Test("【MV】 태그가 붙은 콜 영상은 음원보다 앞, 깨끗한 MV보다 뒤")
+    func aTaggedMVWithCallsIsStillTheMV() {
+        let track = Track(id: "8", title: "アイドルライフメガパック", artist: "iLiFE!", duration: 216)
+        let channel = "UCDdYkqNNrE8LbLJnVxrRgjw"
+        let withCalls = YouTubeClient.Candidate(videoID: "calls", title: "【MV】アイドルライフメガパック / iLiFE!【コール動画】", channelTitle: "iLiFE!【あいらいふ】", channelID: channel)
+        let audio = YouTubeClient.Candidate(videoID: "audio", title: "アイドルライフメガパック", channelTitle: "iLiFE!【あいらいふ】", channelID: channel)
+        let clean = YouTubeClient.Candidate(videoID: "clean", title: "【MV】アイドルライフメガパック / iLiFE!", channelTitle: "iLiFE!【あいらいふ】", channelID: channel)
+        #expect(first([audio, withCalls], track, channels: [channel]) == "calls")
+        #expect(first([withCalls, audio, clean], track, channels: [channel]) == "clean")
+    }
+
+    @Test("곡 제목에 든 말은 감점하지 않는다")
+    func theSongsOwnWordsAreNotPenalties() {
+        let track = Track(id: "3", title: "いえなかったことば ～ありがとう～", artist: "CANDY TUNE", duration: 260)
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "live", title: "いえなかったことば〜ありがとう〜 (ライブ映像)", channelTitle: "CANDY TUNE", channelID: groupChannel),
+            YouTubeClient.Candidate(videoID: "mv", title: "【MV】 CANDY TUNE「いえなかったことば〜ありがとう〜」", channelTitle: "KAWAII LAB.", channelID: label),
+        ]
+        #expect(first(candidates, track, channels: [groupChannel, label]) == "mv")
+    }
+
+    @Test("메이킹·비하인드는 MUSiC CLiP보다 뒤로 간다")
+    func makingOfSinks() {
+        let track = Track(id: "4", title: "土曜日のわたしたちは", artist: "LiSA", duration: 248)
+        let channel = "UCqEfdEvLG5oQWNYlDQrGlKw"
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "behind", title: "LiSA『土曜日のわたしたちは』 - MUSiC CLiP Behind The Scene -", channelTitle: "LiSA Official YouTube", channelID: channel),
+            YouTubeClient.Candidate(videoID: "making", title: "LiSA『土曜日のわたしたちは』MUSiC CLiP Making Movie", channelTitle: "LiSA Official YouTube", channelID: channel),
+            YouTubeClient.Candidate(videoID: "clip", title: "LiSA『土曜日のわたしたちは』 -MUSiC CLiP-", channelTitle: "LiSA Official YouTube", channelID: channel),
+        ]
+        #expect(first(candidates, track, channels: [channel]) == "clip")
+    }
+
+    @Test("한 글자 제목도 괄호로 인용되면 찾는다")
+    func aOneCharacterTitleMatchesWhenQuoted() {
+        let track = Track(id: "5", title: "虹", artist: "日向坂46", duration: 294)
+        let channel = "UCR0V48DJyWbwEAdxLL5FjxA"
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "other", title: "日向坂46『虹の向こう側』", channelTitle: "日向坂46", channelID: channel),
+            YouTubeClient.Candidate(videoID: "mv", title: "日向坂46『虹』", channelTitle: "日向坂46", channelID: channel),
+        ]
+        #expect(YouTubeClient.rankAll(candidates, for: track, channels: [channel]).map(\.videoID) == ["mv"])
+    }
+
+    @Test("길이가 터무니없는 영상은 버리고, 맞는 길이를 앞에 둔다")
+    func lengthDropsTheClearlyWrongAndOrdersTheRest() {
+        let track = Track(id: "6", title: "ナツマトペ", artist: "=LOVE", duration: 240)
+        func c(_ id: String) -> YouTubeClient.Candidate { .init(videoID: id, title: id, channelTitle: "=LOVE") }
+        let kept = YouTubeClient.byLength(
+            [c("short"), c("medley"), c("longish"), c("mv"), c("unknown")],
+            track: track,
+            durations: ["short": 14, "medley": 838, "longish": 420, "mv": 245]
+        )
+        #expect(kept.map(\.videoID) == ["mv", "unknown", "longish"])
     }
 }
