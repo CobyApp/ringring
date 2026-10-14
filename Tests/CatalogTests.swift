@@ -301,3 +301,58 @@ struct VideoMatchingTests {
         #expect(snapshot.channels["UCx"]?.isDeep == false)
     }
 }
+
+@Suite("채널 업로드 순위 매기기")
+struct ChannelRankingTests {
+    private let track = Track(id: "1", title: "YAKIMOCHI", artist: "SWEET STEADY")
+
+    /// The regex the fold used before, kept here as the reference it must match.
+    private func referenceFold(_ text: String) -> String {
+        text.precomposedStringWithCompatibilityMapping
+            .lowercased()
+            .replacingOccurrences(of: #"[\s\p{P}\p{S}ーｰ]"#, with: "", options: .regularExpression)
+    }
+
+    @Test("접기는 예전 정규식과 같은 결과를 낸다")
+    func foldMatchesTheRegex() {
+        let samples = [
+            "FRUITS ZIPPER「わたしの一番かわいいところ」MV",
+            "わたしの一番かわいいところ / FRUITS ZIPPER",
+            "ＬＯＶＥマシーン (2024 ver.)", "LOVEマシ-ン", "【MV】YAKIMOCHI #SWEETSTEADY #shorts",
+            "Call me,Tell me", "1,2,3,FOOOOUR!!", "モーニング娘。'14『笑顔の君は太陽さ』",
+            "≠ME 「すきなこがいること」 Music Video", "♡ Sweet Cafe ♡ ~live~", "ﾃｽﾄ ｰ ｶﾀｶﾅ",
+        ]
+        for sample in samples {
+            #expect(YouTubeClient.fold(sample) == referenceFold(sample), "\(sample)")
+        }
+    }
+
+    @Test("엄격 결과가 먼저 오고, 느슨한 결과는 겹치지 않게 뒤에 붙는다")
+    func strictFirstThenLooseWithoutDuplicates() {
+        let candidates = [
+            YouTubeClient.Candidate(videoID: "live", title: "YAKIMOCHI live", channelTitle: "fan"),
+            YouTubeClient.Candidate(videoID: "mv", title: "SWEET STEADY「YAKIMOCHI」MV", channelTitle: "SWEET STEADY"),
+            YouTubeClient.Candidate(videoID: "other", title: "SWEET STEP", channelTitle: "SWEET STEADY"),
+        ]
+        let ranked = YouTubeClient.rankAll(candidates, for: track, channels: [])
+        #expect(ranked.first?.videoID == "mv")
+        #expect(Set(ranked.map(\.videoID)) == ["mv", "live"])
+        #expect(ranked.count == Set(ranked.map(\.videoID)).count)
+    }
+
+    @Test("업로드 수천 개에 제목이 수백 번 걸려도 금방 끝난다")
+    func aDeepChannelRanksQuickly() {
+        // Two deep channels' worth, with hundreds of hashtag Shorts carrying
+        // the title — the shape that froze the player for minutes.
+        let candidates = (0..<6000).map { i in
+            YouTubeClient.Candidate(
+                videoID: "v\(i)",
+                title: i % 15 == 0 ? "#YAKIMOCHI #SWEETSTEADY #shorts \(i)" : "SWEET STEADY other upload \(i)",
+                channelTitle: "SWEET STEADY"
+            )
+        }
+        let start = ContinuousClock.now
+        _ = YouTubeClient.rankAll(candidates, for: track, channels: [])
+        #expect(ContinuousClock.now - start < .seconds(3))
+    }
+}

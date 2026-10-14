@@ -128,10 +128,10 @@ final class AppModel {
 
     /// How a line is read: the bundled dictionary for the words and grammar, the
     /// system translator for the sentence.
-    var engineLabel: String { "사전 + 시스템 번역" }
+    var engineLabel: String { String(localized: "사전 + 시스템 번역") }
 
     var playbackLabel: String {
-        player.isPreview ? "미리듣기 30초" : "YouTube 영상"
+        player.isPreview ? String(localized: "미리듣기 30초") : String(localized: "YouTube 영상")
     }
 
 

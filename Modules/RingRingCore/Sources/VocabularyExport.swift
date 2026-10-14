@@ -42,7 +42,11 @@ public enum VocabularyExport {
     /// import it as one extra note unless the first row is skipped in its
     /// import dialog — a one-note cost worth paying for a file that opens
     /// legibly everywhere else.
-    public static let header = "단어,읽기,뜻,등급,품사,예문,곡"
+    public static var header: String {
+        AppLanguage.current == .en
+            ? "Word,Reading,Meaning,Level,Part of speech,Example,Song"
+            : "단어,읽기,뜻,등급,품사,예문,곡"
+    }
 
     public static func csv(from rows: [Row]) -> String {
         ([header] + rows.map(line)).joined(separator: "\n") + "\n"

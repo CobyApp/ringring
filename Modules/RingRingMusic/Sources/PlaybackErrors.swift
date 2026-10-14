@@ -25,7 +25,7 @@ enum PlaybackFailure {
             return message
         }
         if previewError.isOffline || videoError?.isOffline == true {
-            return "인터넷 연결이 불안정해 곡을 불러오지 못했습니다. 연결을 확인한 뒤 다시 열어 주세요."
+            return String(localized: "인터넷 연결이 불안정해 곡을 불러오지 못했습니다. 연결을 확인한 뒤 다시 열어 주세요.")
         }
         return ITunesCatalog.Failure.noPreview.localizedDescription
     }

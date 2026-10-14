@@ -192,10 +192,10 @@ struct ReviewScreen: View {
 
     private static func gradeLabel(_ grade: ReviewGrade) -> String {
         switch grade {
-        case .again: "몰랐어요"
-        case .hard: "헷갈렸어요"
-        case .good: "기억났어요"
-        case .easy: "바로 알았어요"
+        case .again: String(localized: "몰랐어요")
+        case .hard: String(localized: "헷갈렸어요")
+        case .good: String(localized: "기억났어요")
+        case .easy: String(localized: "바로 알았어요")
         }
     }
 
@@ -254,8 +254,8 @@ struct ReviewScreen: View {
     /// Three cases, not two: someone with words but nothing due was told to
     /// go and collect words.
     private var finishedTitle: String {
-        if completed > 0 { return "오늘 복습 끝" }
-        return nextDue == nil ? "복습할 단어가 없습니다" : "지금 올라온 카드가 없어요"
+        if completed > 0 { return String(localized: "오늘 복습 끝") }
+        return nextDue == nil ? String(localized: "복습할 단어가 없습니다") : String(localized: "지금 올라온 카드가 없어요")
     }
 
     private var finishedMessage: String {

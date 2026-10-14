@@ -35,8 +35,8 @@ public struct ITunesCatalog: Sendable {
 
         public var errorDescription: String? {
             switch self {
-            case .notFound: "곡을 찾지 못했습니다."
-            case .noPreview: "이 곡은 재생할 수 있는 영상을 찾지 못했습니다."
+            case .notFound: String(localized: "곡을 찾지 못했습니다.")
+            case .noPreview: String(localized: "이 곡은 재생할 수 있는 영상을 찾지 못했습니다.")
             case .transport(let message): message
             }
         }
@@ -162,13 +162,13 @@ public struct ITunesCatalog: Sendable {
             if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 switch http.statusCode {
                 case 403:
-                    throw Failure.transport("곡 정보 요청이 너무 잦습니다. 잠시 뒤에 다시 시도해 주세요.")
+                    throw Failure.transport(String(localized: "곡 정보 요청이 너무 잦습니다. 잠시 뒤에 다시 시도해 주세요."))
                 case 400, 404:
                     // The catalog does not know the id. A status code means
                     // nothing to the reader; "not found" is what it says.
                     throw Failure.notFound
                 default:
-                    throw Failure.transport("곡 정보를 받지 못했습니다. 잠시 뒤에 다시 시도해 주세요.")
+                    throw Failure.transport(String(localized: "곡 정보를 받지 못했습니다. 잠시 뒤에 다시 시도해 주세요."))
                 }
             }
             return try JSONDecoder().decode(Payload.self, from: data)
@@ -179,7 +179,7 @@ public struct ITunesCatalog: Sendable {
             // and must be able to tell that apart from being offline.
             throw error
         } catch {
-            throw Failure.transport("곡 정보를 받지 못했습니다. 인터넷 연결을 확인해 주세요.")
+            throw Failure.transport(String(localized: "곡 정보를 받지 못했습니다. 인터넷 연결을 확인해 주세요."))
         }
     }
 

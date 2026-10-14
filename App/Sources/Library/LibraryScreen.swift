@@ -302,7 +302,7 @@ struct LibraryScreen: View {
     private var levelFilterBar: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 6) {
-                filterChip(nil, label: "전체")
+                filterChip(nil, label: String(localized: "전체"))
                 ForEach(JLPTLevel.allCases, id: \.self) { level in
                     filterChip(level, label: level.label)
                 }
@@ -504,10 +504,10 @@ enum WordOrder: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .added: "담은 순"
-        case .level: "등급 순"
-        case .due: "복습 임박 순"
-        case .frequency: "여러 곡에 나온 순"
+        case .added: String(localized: "담은 순")
+        case .level: String(localized: "등급 순")
+        case .due: String(localized: "복습 임박 순")
+        case .frequency: String(localized: "여러 곡에 나온 순")
         }
     }
 

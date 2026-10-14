@@ -830,12 +830,10 @@ struct PlainTranslationTests {
 
     @Test("엔진 값이 사전과 구분된다")
     func hasItsOwnEngineValue() {
-        // The report counts anything that is not `.onDevice` as a failed model
-        // call, and a line the translator answered is not that. The label is
-        // shown to the reader too, and "사전" would be a lie about where the
-        // translation came from.
-        #expect(AnalysisEngineKind.plainTranslation.label != AnalysisEngineKind.dictionary.label)
-        #expect(AnalysisEngineKind.plainTranslation.label != AnalysisEngineKind.onDevice.label)
+        // Stored with each line, so a line the translator answered must not
+        // decode as a dictionary-only one, nor as the retired model's.
+        #expect(AnalysisEngineKind.plainTranslation.rawValue != AnalysisEngineKind.dictionary.rawValue)
+        #expect(AnalysisEngineKind.plainTranslation.rawValue != AnalysisEngineKind.onDevice.rawValue)
     }
 
     @Test("번역이 채워진 줄은 다시 시도하지 않는다")

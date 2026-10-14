@@ -12,13 +12,24 @@ public struct YouTubeClient: Sendable {
         case noKey
         case notFound
         case quotaExceeded
+        /// Google refused the key itself: not valid, or restricted to other
+        /// apps. Carries Google's own message, for the log. Nothing a reader
+        /// can do and nothing a retry fixes; until the key is fixed every song
+        /// plays as its preview.
+        case keyRejected(String)
         case transport(String)
+
+        var isKeyRejection: Bool {
+            if case .keyRejected = self { return true }
+            return false
+        }
 
         public var errorDescription: String? {
             switch self {
-            case .noKey: "영상을 찾을 수 없어 짧은 클립으로 재생합니다."
-            case .notFound: "이 곡의 영상을 찾지 못했습니다."
-            case .quotaExceeded: "오늘은 새 영상을 더 찾을 수 없습니다. 내일 다시 시도해 주세요."
+            case .noKey: String(localized: "영상을 찾을 수 없어 짧은 클립으로 재생합니다.")
+            case .notFound: String(localized: "이 곡의 영상을 찾지 못했습니다.")
+            case .quotaExceeded: String(localized: "오늘은 새 영상을 더 찾을 수 없습니다. 내일 다시 시도해 주세요.")
+            case .keyRejected: String(localized: "영상 검색을 잠시 사용할 수 없어 미리듣기로 재생합니다.")
             case .transport(let message): message
             }
         }
@@ -217,15 +228,39 @@ public struct YouTubeClient: Sendable {
         return try await session.data(for: request)
     }
 
-    private static func check(_ response: URLResponse, data: Data) throws {
+    /// Turns an error answer into the failure it means.
+    ///
+    /// A spent quota and a refused key are both 403s, and before they were
+    /// told apart a key that stopped matching the app's bundle id read as "no
+    /// video for this song" for every song. Google's error body says which.
+    static func check(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { return }
-        if http.statusCode == 403 {
+        if http.statusCode == 400 || http.statusCode == 403 {
             let body = String(data: data, encoding: .utf8) ?? ""
-            throw body.contains("quota") ? Failure.quotaExceeded : Failure.transport("영상 검색을 잠시 사용할 수 없어 미리듣기로 재생합니다.")
+            let message = Self.errorMessage(in: data) ?? "HTTP \(http.statusCode)"
+            if body.contains("quotaExceeded") || body.contains("dailyLimitExceeded") {
+                throw Failure.quotaExceeded
+            }
+            if body.contains("API_KEY_") || body.contains("keyInvalid") || message.contains("API key")
+                || message.contains("are blocked") {
+                throw Failure.keyRejected(message)
+            }
+            if http.statusCode == 403 {
+                throw Failure.transport(String(localized: "영상 검색을 잠시 사용할 수 없어 미리듣기로 재생합니다."))
+            }
         }
         if !(200..<300).contains(http.statusCode) {
-            throw Failure.transport("영상을 찾지 못했습니다 (\(http.statusCode)). 잠시 뒤에 다시 시도해 주세요.")
+            throw Failure.transport(String(localized: "영상을 찾지 못했습니다 (\(http.statusCode)). 잠시 뒤에 다시 시도해 주세요."))
         }
+    }
+
+    /// `error.message` from a Google API error body.
+    private static func errorMessage(in data: Data) -> String? {
+        struct Body: Decodable {
+            struct Inner: Decodable { let message: String? }
+            let error: Inner?
+        }
+        return (try? JSONDecoder().decode(Body.self, from: data))?.error?.message
     }
 
     /// The best video for a song.
@@ -281,8 +316,10 @@ public struct YouTubeClient: Sendable {
         let wantedArtist = fold(track.artist)
         let scored: [(Candidate, Int)] = candidates.compactMap { candidate in
             let title = fold(candidate.title)
-            let channel = fold(candidate.channelTitle)
             guard wantedTitles.contains(where: title.contains) else { return nil }
+            // Folded only for the few that are the song: a deep channel is
+            // thousands of uploads, and most are something else.
+            let channel = fold(candidate.channelTitle)
             // Nothing to study in an instrumental.
             if title.contains("instrumental") || title.contains("inst.") || title.contains("offvocal") { return nil }
             var score = 1
@@ -323,16 +360,43 @@ public struct YouTubeClient: Sendable {
             .map(\.0)
     }
 
+    /// The strict matches, best first, then the looser takes the strict pass
+    /// dropped — each video once.
+    ///
+    /// The strict list is worked out once. It used to be recomputed for every
+    /// loose candidate, over every upload of every channel: with thousands of
+    /// uploads and hundreds of hashtag Shorts carrying the title, that froze
+    /// the player for minutes and got the app killed.
+    public static func rankAll(_ candidates: [Candidate], for track: Track, channels: [String]) -> [Candidate] {
+        let strict = rank(candidates, for: track, channels: channels, strict: true)
+        let taken = Set(strict.map(\.videoID))
+        return strict + rank(candidates, for: track, channels: channels, strict: false)
+            .filter { !taken.contains($0.videoID) }
+    }
+
+    /// Whitespace, punctuation, symbols and the long-vowel mark: what
+    /// `fold` drops. The same classes as `[\s\p{P}\p{S}ーｰ]`.
+    private static let foldDropped = CharacterSet.whitespacesAndNewlines
+        .union(.punctuationCharacters)
+        .union(.symbols)
+        .union(CharacterSet(charactersIn: "ーｰ"))
+
     /// Lowercased, no spaces or punctuation, so 「わたしの一番かわいいところ / FRUITS ZIPPER」
     /// and 「FRUITS ZIPPER「わたしの一番かわいいところ」MV」 agree about the title.
     ///
     /// Width-folded first, so 「ＬＯＶＥ」 and 「LOVE」 agree, and the long-vowel
     /// mark is dropped with the punctuation: the catalogue writes 「LOVEマシ-ン」
     /// with a hyphen where the video says 「LOVEマシーン」.
+    ///
+    /// A scalar filter rather than a regex: it runs over every upload title of
+    /// every channel, and the regex made that the slowest part of a lookup.
     static func fold(_ text: String) -> String {
-        text.precomposedStringWithCompatibilityMapping
-            .lowercased()
-            .replacingOccurrences(of: #"[\s\p{P}\p{S}ーｰ]"#, with: "", options: .regularExpression)
+        var kept = String.UnicodeScalarView()
+        for scalar in text.precomposedStringWithCompatibilityMapping.lowercased().unicodeScalars
+        where !foldDropped.contains(scalar) {
+            kept.append(scalar)
+        }
+        return String(kept)
     }
 
     /// The ways a catalogue title may appear inside a video title.

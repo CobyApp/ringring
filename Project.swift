@@ -75,7 +75,7 @@ let project = Project(
     settings: .settings(base: baseSettings),
     targets: [
         // Domain models, SwiftData schema, spaced-repetition scheduler.
-        module("RingRingCore"),
+        module("RingRingCore", hasResources: true),
 
         // Design system: palette extraction, mesh background, furigana text.
         module("RingRingDesign", dependencies: [
@@ -88,7 +88,7 @@ let project = Project(
         // LRCLIB client and LRC parsing.
         module("RingRingLyrics", dependencies: [.target(name: "RingRingCore")]),
 
-        // Tokenization, readings, and the on-device analysis engine.
+        // Tokenization, readings, and line analysis: dictionary, grammar, translation.
         module(
             "RingRingSensei",
             dependencies: [.target(name: "RingRingCore")],

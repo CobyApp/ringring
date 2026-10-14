@@ -84,11 +84,11 @@ struct GroupDetailScreen: View {
     /// each part localized, and the Korean pronunciation dropped for English.
     private var subtitle: Text {
         let count = Text("\(tracks.count)곡")
-        let reading = AppLanguage.current == .ko ? Text("\(group.readingKo) · ") : Text("")
+        let reading = Text(verbatim: AppLanguage.current == .ko ? "\(group.readingKo) · " : "")
         if group.label.namesAFamily {
-            return reading + Text(group.label.localizedTitle) + Text(" · ") + count
+            return Text("\(reading)\(Text(group.label.localizedTitle)) · \(count)")
         }
-        return reading + count
+        return Text("\(reading)\(count)")
     }
 
     /// The group's own picture, already fetched for its card.

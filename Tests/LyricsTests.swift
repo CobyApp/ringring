@@ -447,7 +447,7 @@ struct LyricsServerBusyTests {
                 Issue.record("serverBusy가 아니라 \(failure)")
                 return
             }
-            #expect(failure.localizedDescription.contains("가사 서버"))
+            #expect(!failure.localizedDescription.contains("503"))
         } catch {
             Issue.record("예상하지 못한 오류 \(error)")
         }

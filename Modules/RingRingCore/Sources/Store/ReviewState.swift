@@ -14,15 +14,6 @@ public enum ReviewGrade: Int, CaseIterable, Sendable {
     case hard = 2
     case good = 3
     case easy = 4
-
-    public var label: String {
-        switch self {
-        case .again: "다시"
-        case .hard: "어려움"
-        case .good: "알맞음"
-        case .easy: "쉬움"
-        }
-    }
 }
 
 @Model

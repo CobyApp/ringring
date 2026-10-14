@@ -246,10 +246,9 @@ public final class MusicPlayerController {
     /// Starts finding a song's video without playing anything.
     ///
     /// Called as soon as a song is opened, so the channels are read and the
-    /// video chosen while the lyrics are fetched, the reader picks a reading
-    /// and the ad runs — not after all of that. The answer lands in the
-    /// directory; the load that follows finds it there, or joins the lookup
-    /// if it is still running.
+    /// video chosen while the lyrics are fetched — not after. The answer lands
+    /// in the directory; the load that follows finds it there, or joins the
+    /// lookup if it is still running.
     public func prefetchVideo(for track: Track) {
         guard youtube.hasKey, lookups[track.id] == nil else { return }
         if case .unknown = known.lookup(track.id) {
@@ -289,6 +288,12 @@ public final class MusicPlayerController {
             known.recordMiss(for: track.id, permanent: false)
             persistDirectory()
             throw YouTubeClient.Failure.notFound
+        } catch YouTubeClient.Failure.keyRejected(let message) {
+            // A configuration fault, not a song without a video: say so in
+            // terms that point at the fix.
+            let bundleID = Bundle.main.bundleIdentifier ?? "?"
+            log.fault("YouTube key rejected for \(bundleID, privacy: .public): \(message, privacy: .public)")
+            throw YouTubeClient.Failure.keyRejected(message)
         } catch {
             log.error("video search failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -319,6 +324,9 @@ public final class MusicPlayerController {
                 published += known.channels[id]?.videos ?? []
             } catch YouTubeClient.Failure.noKey {
                 throw YouTubeClient.Failure.noKey
+            } catch let failure as YouTubeClient.Failure where failure.isKeyRejection {
+                // Every other channel and the search would be refused the same way.
+                throw failure
             } catch let error where error.isCancellation {
                 throw error
             } catch {
@@ -329,10 +337,12 @@ public final class MusicPlayerController {
             }
         }
         persistDirectory()
-        return YouTubeClient.rank(published, for: track, channels: ids, strict: true)
-            + YouTubeClient.rank(published, for: track, channels: ids, strict: false).filter { loose in
-                !YouTubeClient.rank(published, for: track, channels: ids, strict: true).contains(loose)
-            }
+        // Off the main actor: thousands of uploads are still real work, and
+        // this runs as a song opens, while the lyrics and their analysis load.
+        let candidates = published
+        return await Task.detached(priority: .userInitiated) {
+            YouTubeClient.rankAll(candidates, for: track, channels: ids)
+        }.value
     }
 
     /// Saves the directory, in order — see `VideoDirectoryWriter`.

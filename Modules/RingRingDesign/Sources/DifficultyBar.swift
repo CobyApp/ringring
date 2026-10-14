@@ -28,7 +28,7 @@ public struct DifficultyBar: View {
 
     private var legend: String {
         sampled < 0.5
-            ? "\(difficulty.summary) · 일부만 해석한 추정"
+            ? String(localized: "\(difficulty.summary) · 일부만 해석한 추정")
             : difficulty.summary
     }
 

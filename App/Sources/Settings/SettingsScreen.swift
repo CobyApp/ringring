@@ -27,19 +27,19 @@ struct SettingsScreen: View {
     /// switch and the language pack.
     private var translationFooter: String {
         guard plainTranslationOn else {
-            return "문장 번역을 끄면 각 줄에 단어 뜻과 문법만 표시됩니다."
+            return String(localized: "문장 번역을 끄면 각 줄에 단어 뜻과 문법만 표시됩니다.")
         }
         switch packStatus {
         case .installed:
-            return "각 줄을 단어 뜻·문법과 함께 문장으로 번역합니다."
+            return String(localized: "각 줄을 단어 뜻·문법과 함께 문장으로 번역합니다.")
         case .supported:
-            return "문장 번역을 보려면 번역 파일을 한 번 받아야 합니다."
+            return String(localized: "문장 번역을 보려면 번역 파일을 한 번 받아야 합니다.")
         case .unsupported:
-            return "이 기기에서는 문장 번역을 쓸 수 없어 단어 뜻만 표시됩니다."
+            return String(localized: "이 기기에서는 문장 번역을 쓸 수 없어 단어 뜻만 표시됩니다.")
         case nil:
-            return "문장 번역을 쓸 수 있는지 확인하고 있습니다."
+            return String(localized: "문장 번역을 쓸 수 있는지 확인하고 있습니다.")
         @unknown default:
-            return "문장 번역을 쓸 수 있는지 확인하고 있습니다."
+            return String(localized: "문장 번역을 쓸 수 있는지 확인하고 있습니다.")
         }
     }
 
@@ -156,7 +156,7 @@ struct SettingsScreen: View {
                         LabeledContent("재생", value: app.playbackLabel)
                     }
                 } footer: {
-                    Text("가사 해석은 기기 안에서 처리됩니다. 가사 원문이나 학습 기록은 어디로도 올라가지 않습니다. 노래 영상은 YouTube에서 재생됩니다.")
+                    Text("가사 해석은 기기 안에서 처리됩니다. 학습 기록은 어디로도 올라가지 않고, 직접 붙여넣은 가사는 「LRCLIB에 공유」를 켰을 때만 올라갑니다. 노래 영상은 YouTube에서 재생됩니다.")
                 }
                 }
                 .scrollContentBackground(.hidden)

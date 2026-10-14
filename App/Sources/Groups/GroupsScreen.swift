@@ -315,7 +315,7 @@ private struct GroupCard: View {
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .accessibilityLabel(isOshi ? "\(group.name), 최애" : group.name)
+        .accessibilityLabel(isOshi ? String(localized: "\(group.name), 최애") : group.name)
         .animation(.easeInOut(duration: 0.25), value: artwork.image != nil)
         .task(id: artworkURL) { await artwork.load(artworkURL, trimmingLetterbox: true) }
     }

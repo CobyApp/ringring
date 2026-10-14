@@ -1,5 +1,6 @@
 import RingRingCore
 import RingRingDesign
+import SwiftData
 import SwiftUI
 
 /// Four tabs, one per intent: what to do now, what to study next, what I have
