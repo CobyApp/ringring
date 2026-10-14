@@ -265,20 +265,15 @@ public final class MusicPlayerController {
         let group = IdolGroup.group(forArtist: track.artist)
         let groupChannels = group?.youtubeChannels ?? []
         do {
-            var found = try await fromChannels(groupChannels, for: track)
+            var found = try await byLength(fromChannels(groupChannels, for: track), for: track)
             var source = "the group's channels"
+            // Nothing of the song's length on the channels — only Shorts and
+            // teasers, or nothing at all — so ask search.
             if found.isEmpty {
-                found = try await youtube.videos(for: track, channels: groupChannels)
+                found = try await byLength(youtube.videos(for: track, channels: groupChannels), for: track)
                 source = "search"
             }
-            // The lengths decide what is the song and what only mentions it.
-            // One request; the ranking above cannot tell a Short from an MV.
-            let lengths = (try? await youtube.durations(of: Array(found.prefix(50).map(\.videoID)))) ?? [:]
-            // `try?` above swallows a cancellation; an abandoned lookup must
-            // not go on to remember an unfiltered answer.
-            try Task.checkCancellation()
-            let fitting = YouTubeClient.aboutTheSongsLength(found, track: track, durations: lengths)
-            if !fitting.isEmpty { found = fitting }
+            guard !found.isEmpty else { throw YouTubeClient.Failure.notFound }
             log.info("video for \(track.title, privacy: .public) from \(source, privacy: .public): \(found[0].videoID, privacy: .public) (+\(found.count - 1))")
             known.record(found[0].videoID, alternates: found.dropFirst().map(\.videoID), for: track.id)
             persistDirectory()
@@ -298,6 +293,17 @@ public final class MusicPlayerController {
             log.error("video search failed: \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    /// The lengths decide what is the song and what only mentions it. One
+    /// request; the ranking cannot tell a Short from an MV.
+    private func byLength(_ found: [YouTubeClient.Candidate], for track: Track) async throws -> [YouTubeClient.Candidate] {
+        guard !found.isEmpty else { return found }
+        let lengths = (try? await youtube.durations(of: Array(found.prefix(50).map(\.videoID)))) ?? [:]
+        // `try?` above swallows a cancellation; an abandoned lookup must not
+        // go on to remember an unfiltered answer.
+        try Task.checkCancellation()
+        return YouTubeClient.byLength(found, track: track, durations: lengths)
     }
 
     /// This song among what the group's channels have published, best first.
