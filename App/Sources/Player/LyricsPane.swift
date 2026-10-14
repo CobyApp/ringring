@@ -69,10 +69,6 @@ struct LyricsPane: View {
         }
     }
 
-    /// The highlight is one shape that travels from line to line, rather than
-    /// one per line fading in and out — the eye follows it down the page.
-    @Namespace private var penlight
-
     private func lyricsList(_ lyrics: Lyrics) -> some View {
         // Keyed to the song. The player swaps songs in place rather than
         // re-presenting, so without this the scroll view kept the previous
@@ -90,7 +86,6 @@ struct LyricsPane: View {
                             line: line,
                             isActive: line.id == activeLine,
                             isPast: activeLine.map { line.id < $0 } ?? false,
-                            penlight: penlight,
                             showsFurigana: session.showsFurigana,
                             scale: session.textSize.scale,
                             translation: session.translation(for: line.id),
@@ -273,7 +268,6 @@ private struct LyricRow: View {
     /// Already sung. Dimmed a step further than the lines still to come, so
     /// the page shows where the song has been.
     let isPast: Bool
-    let penlight: Namespace.ID
     let showsFurigana: Bool
     let scale: Double
     let translation: String?
@@ -341,20 +335,12 @@ private struct LyricRow: View {
         .padding(.vertical, JustTheme.Space.tight)
         .opacity(isPast ? 0.62 : 1)
         .background {
-            if isActive {
-                // The wash and the penlight bar are matched across rows, so
-                // they glide to the next line instead of blinking there.
-                RoundedRectangle(cornerRadius: JustTheme.Radius.card)
-                    .fill(JustTheme.Kawaii.accent.opacity(0.10))
-                    .overlay(alignment: .leading) {
-                        Capsule()
-                            .fill(JustTheme.Kawaii.accent)
-                            .frame(width: 3)
-                            .padding(.vertical, 10)
-                            .shadow(color: JustTheme.Kawaii.accent.opacity(0.8), radius: 6)
-                    }
-                    .matchedGeometryEffect(id: "penlight", in: penlight)
-            }
+            // A wash that fades in place. It used to glide from row to row
+            // through a matchedGeometryEffect, which inside this LazyVStack
+            // crashed SwiftUI's layout (a freed stack child) when the active
+            // line jumped on a seek or rows resized as translations arrived.
+            RoundedRectangle(cornerRadius: JustTheme.Radius.card)
+                .fill(JustTheme.Kawaii.accent.opacity(isActive ? 0.10 : 0))
         }
         .animation(.spring(duration: 0.45, bounce: 0.18), value: isActive)
         .animation(.easeInOut(duration: 0.3), value: isPast)
