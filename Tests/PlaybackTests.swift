@@ -121,3 +121,55 @@ struct PlaybackFailureTests {
         #expect(transport == "곡 정보를 받지 못했습니다.")
     }
 }
+
+@Suite("YouTube 오류 응답 구분")
+struct YouTubeErrorTests {
+    private func response(_ status: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: "https://www.googleapis.com/youtube/v3/search")!,
+                        statusCode: status, httpVersion: nil, headerFields: nil)!
+    }
+
+    private func failure(_ status: Int, _ body: String) -> YouTubeClient.Failure? {
+        do {
+            try YouTubeClient.check(response(status), data: Data(body.utf8))
+            return nil
+        } catch let failure as YouTubeClient.Failure {
+            return failure
+        } catch {
+            return nil
+        }
+    }
+
+    @Test("다른 앱으로 제한된 키는 할당량 소진이 아니라 키 거부다")
+    func blockedBundleIsAKeyRejection() {
+        // What Google answered for two weeks after the bundle id changed.
+        let body = #"{"error":{"code":403,"message":"Requests from this iOS client application com.coby.ringring are blocked.","errors":[{"reason":"forbidden"}],"details":[{"reason":"API_KEY_IOS_APP_BLOCKED"}]}}"#
+        #expect(failure(403, body) == .keyRejected("Requests from this iOS client application com.coby.ringring are blocked."))
+    }
+
+    @Test("잘못된 키도 키 거부다")
+    func invalidKeyIsAKeyRejection() {
+        let body = #"{"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","errors":[{"reason":"badRequest"}],"details":[{"reason":"API_KEY_INVALID"}]}}"#
+        #expect(failure(400, body) == .keyRejected("API key not valid. Please pass a valid API key."))
+    }
+
+    @Test("할당량 소진은 그대로 할당량 소진이다")
+    func quotaStaysQuota() {
+        let body = #"{"error":{"code":403,"message":"The request cannot be completed because you have exceeded your quota.","errors":[{"reason":"quotaExceeded"}]}}"#
+        #expect(failure(403, body) == .quotaExceeded)
+    }
+
+    @Test("그 밖의 403은 일시적 오류로 남는다")
+    func otherForbiddenIsTransport() {
+        let body = #"{"error":{"code":403,"message":"Forbidden","errors":[{"reason":"forbidden"}]}}"#
+        guard case .transport = failure(403, body) else {
+            Issue.record("transport가 아니라 \(String(describing: failure(403, body)))")
+            return
+        }
+    }
+
+    @Test("성공 응답은 통과한다")
+    func successPasses() {
+        #expect(failure(200, "{}") == nil)
+    }
+}

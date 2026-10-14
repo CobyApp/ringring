@@ -60,7 +60,9 @@ TUIST_YOUTUBE_API_KEY=여기에_키
 
 - **API 제한**: YouTube Data API v3만 허용
 - **애플리케이션 제한**: iOS 앱, 번들 ID `com.coby.ringring`
-  (iOS 제한은 요청 헤더로 판별하는 것이라 완전한 방어는 아닙니다)
+  (iOS 제한은 요청 헤더로 판별하는 것이라 완전한 방어는 아닙니다). 번들 ID를 바꾸면
+  여기도 함께 바꿔야 합니다 — 안 맞으면 Google이 403으로 거부하고, 앱은 모든 곡을
+  미리듣기로 틉니다. 앱은 이 경우를 할당량 소진과 구분해 `video` 로그에 fault로 남깁니다.
 - **할당량 알림**: Cloud Monitoring에서 일일 사용량 경보를 걸어 두기
 
 근본적인 해결은 키를 서버에 두고 검색 결과를 캐시해 모든 사용자가 나눠 쓰는
@@ -530,8 +532,9 @@ export 양쪽에 그대로 넘기므로 `export_xcargs`로 중복하면 xcodebui
 | `APPSTORE_KEY_ID` / `APPSTORE_ISSUER_ID` / `APPSTORE_PRIVATE_KEY` | App Store Connect API 키 (서명·업로드) |
 | `YOUTUBE_API_KEY` | `TUIST_YOUTUBE_API_KEY` — 없으면 모든 곡이 미리듣기 |
 
-`fastlane beta`는 YouTube 키가 비어 있으면 빌드 전에 멈춥니다. 빠진 채로 올라가면 빌드는 성공하고 앱만 조용히 망가지기
-때문입니다.
+`fastlane beta`는 YouTube 키가 비어 있거나, 출시 번들 ID로 보낸 요청을 Google이 거부하면
+빌드 전에 멈춥니다(채널 조회 한 번, 할당량 1). 어느 쪽이든 빌드는 성공하고 앱만 조용히
+망가지기 때문입니다. 할당량이 바닥난 날과 네트워크 오류는 경고만 하고 넘어갑니다.
 
 버전은 `MARKETING_VERSION`과 `CURRENT_PROJECT_VERSION`이 정합니다. Info.plist에
 값을 박아두면 fastlane이 넘기는 빌드 번호가 무시되어 업로드가 매번 충돌합니다.
@@ -554,8 +557,8 @@ CI는 `macos-26` 러너와 Xcode 26.6으로 고정합니다. 위의 기준 버�
 넘기지 않습니다. 서드파티 SDK·계정·분석 도구가 없으므로 수집 항목
 (`NSPrivacyCollectedDataTypes`)은 비어 있고, 추적(`NSPrivacyTracking`)은 거짓입니다.
 
-필수 사유 API는 UserDefaults(CA92.1)입니다. `RingRingSensei`와 `RingRingDesign`은 동적
-프레임워크라 앱 매니페스트가 그 안의 호출을 덮지 못하므로, 각자
+필수 사유 API는 UserDefaults(CA92.1)입니다. `RingRingCore`·`RingRingSensei`·`RingRingDesign`은
+동적 프레임워크라 앱 매니페스트가 그 안의 호출을 덮지 못하므로, 각자
 `Modules/<모듈>/Resources/PrivacyInfo.xcprivacy`를 갖습니다(ITMS-91053). 다른
 모듈에서 UserDefaults 같은 필수 사유 API를 쓰기 시작하면 그 모듈에도 매니페스트를
 추가하고 `Project.swift`에서 `hasResources: true`로 연결해야 합니다.
@@ -568,6 +571,8 @@ CI는 `macos-26` 러너와 Xcode 26.6으로 고정합니다. 위의 기준 버�
 - [ ] Xcode Organizer에서 아카이브의 **Privacy Report**를 뽑아 수집 항목이 없는지 확인
 - [ ] 「데이터를 수집하지 않음」으로 답하기 — 가사·단어·복습 기록은 기기에만 남고,
       계정·연락처·사용자 콘텐츠를 받지 않음
+- [ ] 「LRCLIB에 공유」를 켠 사람의 붙여넣은 가사는 공개 데이터베이스인 LRCLIB로
+      올라감 — 앱이 받지는 않지만, 「기타 사용자 콘텐츠」로 답할지 출시 전에 판단
 - [ ] 영상은 YouTube 내장 플레이어로 재생하므로, 개인정보 처리방침에 YouTube
       이용약관과 Google 개인정보처리방침을 안내
 - [ ] 예전 빌드에서 광고 SDK 때문에 입력한 라벨이 남아 있으면 지우기

@@ -10,13 +10,52 @@ TEAM_ID = "3Y8YH8GWMM"
 APP_NAME = "링링 - 최애의 노래로 일본어"
 APP_PRIMARY_LANGUAGE = "English (U.S.)"
 
+require "json"
+require "net/http"
+
+# A key restricted to other iOS apps fails the same quiet way as a missing one:
+# Google answers 403 and every song plays as a 30-second preview. This is how
+# the rename to com.coby.ringring broke video search without any build failing.
+# One channels.list call (1 quota unit) sent as the release bundle id proves the
+# key works for it. A spent daily quota is not a configuration error, and a
+# network hiccup proves nothing, so both only warn.
+def youtube_key_problem(key)
+  uri = URI("https://www.googleapis.com/youtube/v3/channels?part=id&id=UCQG8tNnV4hKetLhMb4MopHQ&key=#{key}")
+  request = Net::HTTP::Get.new(uri)
+  request["X-Ios-Bundle-Identifier"] = APP_IDENTIFIER
+  response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 10) do |http|
+    http.request(request)
+  end
+  return nil if response.is_a?(Net::HTTPSuccess)
+
+  message = begin
+    JSON.parse(response.body).dig("error", "message")
+  rescue JSON::ParserError
+    nil
+  end || "HTTP #{response.code}"
+  if message.include?("quota")
+    UI.important("YouTube quota is spent for today; the key itself could not be checked")
+    return nil
+  end
+  hint = message.include?("blocked") ? " (add #{APP_IDENTIFIER} to the key's iOS app restrictions in Google Cloud)" : ""
+  "TUIST_YOUTUBE_API_KEY is rejected for #{APP_IDENTIFIER}: #{message}#{hint}"
+rescue StandardError => e
+  UI.important("Could not check the YouTube key (#{e.class}); continuing")
+  nil
+end
+
 # `tuist generate` bakes these into Info.plist. A missing one does not fail the
 # build — it ships a build that quietly misbehaves (every song a 30-second
 # preview) — so the upload lane checks them first.
 def verify_release_environment!
   problems = []
 
-  problems << "TUIST_YOUTUBE_API_KEY is not set" if ENV["TUIST_YOUTUBE_API_KEY"].to_s.strip.empty?
+  youtube_key = ENV["TUIST_YOUTUBE_API_KEY"].to_s.strip
+  if youtube_key.empty?
+    problems << "TUIST_YOUTUBE_API_KEY is not set"
+  elsif (problem = youtube_key_problem(youtube_key))
+    problems << problem
+  end
 
   version = ENV["TUIST_MARKETING_VERSION"].to_s.strip
   unless version.empty? || version.match?(/\A\d+(\.\d+){1,2}\z/)
