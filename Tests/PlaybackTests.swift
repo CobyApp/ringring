@@ -174,3 +174,16 @@ struct YouTubeErrorTests {
         #expect(failure(200, "{}") == nil)
     }
 }
+
+@Suite("영상 자막")
+@MainActor
+struct VideoCaptionTests {
+    @Test("손쉬운 사용에서 자막을 켜지 않았으면 MV 자막을 내린다")
+    func captionsAreUnloadedUnlessTheReaderWantsThem() {
+        let hidden = VideoPage.page(keepingCaptions: false)
+        #expect(hidden.contains("keepCaptions = false"))
+        #expect(hidden.contains("unloadModule('captions')"))
+        #expect(!hidden.contains("__KEEP_CAPTIONS__"))
+        #expect(VideoPage.page(keepingCaptions: true).contains("keepCaptions = true"))
+    }
+}

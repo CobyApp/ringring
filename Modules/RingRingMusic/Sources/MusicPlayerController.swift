@@ -3,6 +3,7 @@ import Foundation
 import RingRingCore
 import Observation
 import os
+import UIKit
 import WebKit
 
 /// Playback: the song's video through YouTube's embedded player, or its
@@ -825,7 +826,7 @@ private final class WebPlayer: NSObject, WKScriptMessageHandler, WKNavigationDel
         // has none or claims to be youtube.com itself (the old helper trick).
         // Nothing is fetched from this address; it is the app's name as an
         // origin, and the same value is passed to the player as `origin`.
-        view.loadHTMLString(Self.page, baseURL: URL(string: Self.origin))
+        view.loadHTMLString(VideoPage.page(keepingCaptions: UIAccessibility.isClosedCaptioningEnabled), baseURL: URL(string: Self.origin))
     }
 
     func load(videoID: String, autoplay: Bool) {
@@ -922,13 +923,29 @@ private final class WebPlayer: NSObject, WKScriptMessageHandler, WKNavigationDel
 
     /// The player fills the page; the page's own controls are off because
     /// the app draws its own transport, and one set of controls is enough.
-    private static let page = """
+}
+
+/// The page the YouTube player runs in.
+enum VideoPage {
+    /// The player page.
+    ///
+    /// - Parameter keepingCaptions: whether YouTube may show the video's
+    ///   captions. Many MVs switch their lyric captions on by default, which
+    ///   puts the words over the video a second time, timed differently from
+    ///   the app's own lyrics. They are taken off — unless the reader has
+    ///   closed captions turned on in Accessibility, which is a setting about
+    ///   them, not about this screen.
+    static func page(keepingCaptions: Bool) -> String {
+        template.replacingOccurrences(of: "__KEEP_CAPTIONS__", with: keepingCaptions ? "true" : "false")
+    }
+
+    private static let template = """
     <!doctype html><html><head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>html,body{margin:0;background:#000;height:100%;overflow:hidden}#p{position:absolute;inset:0}</style>
     </head><body><div id="p"></div>
     <script>
-    var player, tick, gen = 0;
+    var player, tick, gen = 0, keepCaptions = __KEEP_CAPTIONS__;
     function post(m){ window.webkit.messageHandlers.just.postMessage(m); }
     var tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -939,7 +956,13 @@ private final class WebPlayer: NSObject, WKScriptMessageHandler, WKNavigationDel
         playerVars: { playsinline: 1, controls: 0, rel: 0, fs: 0, disablekb: 1, iv_load_policy: 3, origin: 'https://ringring.app' },
         events: {
           onReady: function() { post({e: 'ready'}); startTick(); },
-          onStateChange: function(ev) { post({e: 'state', g: gen, s: ev.data, t: player.getCurrentTime(), d: player.getDuration()}); },
+          onStateChange: function(ev) {
+            // Captions load with playback, so they are unloaded once it starts.
+            if (ev.data === 1 && !keepCaptions) {
+              try { player.unloadModule('captions'); player.unloadModule('cc'); } catch (e) {}
+            }
+            post({e: 'state', g: gen, s: ev.data, t: player.getCurrentTime(), d: player.getDuration()});
+          },
           onError: function(ev) { post({e: 'error', g: gen, c: ev.data}); }
         }
       });
