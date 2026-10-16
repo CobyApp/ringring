@@ -240,6 +240,16 @@
         }
       }
     },
+    "iPad에서는 앱 안에서 번역 파일을 받을 수 없어요. 설정 앱의 번역 언어나 「번역」 앱에서 일본어를 받아 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On iPad, translation files can't be downloaded inside the app. Download Japanese from the translation languages in the Settings app, or in the Translate app."
+          }
+        }
+      }
+    },
     "♪": {},
     "「%@」에 맞는 단어가 없어요": {
       "localizations": {
