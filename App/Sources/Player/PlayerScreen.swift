@@ -122,7 +122,8 @@ struct PlayerScreen: View {
         // translation — not buried in settings. Only when it is downloadable and
         // the reader has not turned sentence translation off.
         .task {
-            guard PlainTranslator.shared.isEnabled,
+            guard PlainTranslator.offersDownloadInApp(onPad: UIDevice.current.userInterfaceIdiom == .pad),
+                  PlainTranslator.shared.isEnabled,
                   await PlainTranslator.shared.availability() == .supported
             else { return }
             packDownload = PlainTranslator.configuration

@@ -1601,3 +1601,13 @@ struct SongChangeDuringAnalysisTests {
         #expect(sensei.cache(for: "songA")?[0]?.translationKo == "꿈을 꿨다")
     }
 }
+@Suite("번역 파일 받기 안내")
+struct PackDownloadOfferTests {
+    @Test("아이패드에서는 앱 안에서 받기 화면을 띄우지 않는다")
+    func noInAppPromptOnPad() {
+        // iOS 27.0.1 aborts presenting the system's download sheet as an iPad
+        // form sheet; the player crashed as a song opened.
+        #expect(PlainTranslator.offersDownloadInApp(onPad: true) == false)
+        #expect(PlainTranslator.offersDownloadInApp(onPad: false) == true)
+    }
+}

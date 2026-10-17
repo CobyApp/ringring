@@ -78,6 +78,18 @@ public final class PlainTranslator {
         return await availability() == .installed
     }
 
+    /// Whether the pack's download prompt may be put on screen from inside the
+    /// app.
+    ///
+    /// Not on iPad. There UIKit presents the system's download sheet as a form
+    /// sheet, and on iOS 27.0.1 that aborts the app — `-[_UISceneHostingController
+    /// _setSheetConfiguration:]: unrecognized selector`. The player asked for
+    /// it as a song opened, so every song on an iPad without the pack crashed.
+    /// iPad readers are pointed to the system's own download instead.
+    public nonisolated static func offersDownloadInApp(onPad: Bool) -> Bool {
+        !onPad
+    }
+
     /// What a view passes to `.translationTask` to download the pack.
     ///
     /// The framework only offers the download through that modifier, and that is

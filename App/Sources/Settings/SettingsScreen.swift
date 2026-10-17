@@ -23,6 +23,12 @@ struct SettingsScreen: View {
     /// Non-nil while a download is being asked for.
     @State private var download: TranslationSession.Configuration?
 
+    /// Whether this device may show the system's pack download prompt — see
+    /// `PlainTranslator.offersDownloadInApp`.
+    private static var offersDownload: Bool {
+        PlainTranslator.offersDownloadInApp(onPad: UIDevice.current.userInterfaceIdiom == .pad)
+    }
+
     /// Says what the line study will show on this device, which depends on the
     /// switch and the language pack.
     private var translationFooter: String {
@@ -33,6 +39,9 @@ struct SettingsScreen: View {
         case .installed:
             return String(localized: "각 줄을 단어 뜻·문법과 함께 문장으로 번역합니다.")
         case .supported:
+            guard Self.offersDownload else {
+                return String(localized: "iPad에서는 앱 안에서 번역 파일을 받을 수 없어요. 설정 앱의 번역 언어나 「번역」 앱에서 일본어를 받아 주세요.")
+            }
             return String(localized: "문장 번역을 보려면 번역 파일을 한 번 받아야 합니다.")
         case .unsupported:
             return String(localized: "이 기기에서는 문장 번역을 쓸 수 없어 단어 뜻만 표시됩니다.")
@@ -121,7 +130,7 @@ struct SettingsScreen: View {
                         }
                     ))
 
-                    if plainTranslationOn, packStatus == .supported {
+                    if plainTranslationOn, packStatus == .supported, Self.offersDownload {
                         // The pack can only be fetched from a view, and it puts
                         // a system prompt on screen — so it is asked for here,
                         // by someone who opened this screen.
