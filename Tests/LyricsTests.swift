@@ -532,3 +532,40 @@ struct ParallelSpellingTests {
         #expect(ContinuousClock.now - start < .seconds(1.9))
     }
 }
+
+@Suite("가사 없음 기억")
+struct LyricsMissesTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func freshFile() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("lyrics-misses-\(UUID().uuidString).json")
+    }
+
+    @Test("없다고 답한 곡은 사흘 동안 다시 묻지 않는다")
+    func aMissIsTrustedForThreeDays() {
+        var misses = LyricsMisses(file: freshFile())
+        misses.record("song", at: now)
+        #expect(misses.isRecent("song", now: now.addingTimeInterval(60 * 60 * 24 * 2)))
+        #expect(!misses.isRecent("song", now: now.addingTimeInterval(60 * 60 * 24 * 3 + 1)))
+        #expect(!misses.isRecent("other", now: now))
+    }
+
+    @Test("앱을 다시 켜도 기억한다")
+    func missesSurviveARestart() {
+        let file = freshFile()
+        var first = LyricsMisses(file: file)
+        first.record("song", at: now)
+        let second = LyricsMisses(file: file)
+        #expect(second.isRecent("song", now: now))
+    }
+
+    @Test("가사를 찾으면 잊는다")
+    func findingLyricsForgetsTheMiss() {
+        let file = freshFile()
+        var misses = LyricsMisses(file: file)
+        misses.record("song", at: now)
+        misses.forget("song")
+        #expect(!misses.isRecent("song", now: now))
+        #expect(!LyricsMisses(file: file).isRecent("song", now: now))
+    }
+}

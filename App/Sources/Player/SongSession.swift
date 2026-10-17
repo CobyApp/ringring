@@ -47,6 +47,8 @@ final class SongSession {
     private let store: JustStore
     private let sensei: Sensei
     private let client = LRCLIBClient()
+    /// Shared by every session: a song's 「no lyrics」 outlives its player.
+    private static var misses = LyricsMisses()
     private var bulkTask: Task<Void, Never>?
 
     private let autoAnalysis: Bool
@@ -112,6 +114,10 @@ final class SongSession {
 
         if let cached = record.lyrics, !cached.isEmpty {
             lyricsState = .ready(cached)
+        } else if Self.misses.isRecent(track.id) {
+            // Asked within the last few days, and LRCLIB had none. The card
+            // still offers 「Search again」, which always asks.
+            lyricsState = .missing(LRCLIBClient.Failure.notFound.localizedDescription)
         } else {
             await fetchLyrics()
         }
@@ -184,10 +190,12 @@ final class SongSession {
             )
             lyricsState = .ready(lyrics)
             song?.lyrics = lyrics
+            Self.misses.forget(track.id)
         } catch where error.isCancellation {
             // The player closed mid-lookup; "cancelled" is not a missing lyric.
             return
         } catch {
+            if case LRCLIBClient.Failure.notFound = error { Self.misses.record(track.id) }
             lyricsState = .missing(error.localizedDescription)
         }
     }
