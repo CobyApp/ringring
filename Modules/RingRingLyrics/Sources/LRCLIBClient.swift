@@ -323,10 +323,12 @@ public struct LRCLIBClient: Sendable {
     private func get<T: Decodable>(_ url: URL, as type: T.Type) async throws -> T {
         do {
             return try await getOnce(url, as: type)
-        } catch Failure.serverBusy {
+        } catch Failure.serverBusy(let status) where status != 429 {
             // A 503 is often a moment's overload; one more try after a pause
             // gets through more often than not. Only one — a server that is
-            // actually down should not be hammered.
+            // actually down should not be hammered. Not for a 429: that is
+            // LRCLIB saying this address asked too much, and asking again a
+            // second later is asking too much again.
             try await Task.sleep(for: retryDelay)
             return try await getOnce(url, as: type)
         }

@@ -7,7 +7,12 @@ import Testing
 /// How many of each artist's songs LRCLIB gives lyrics for, by artist.
 ///
 /// A handful of each artist's catalogue songs, asked one at a time with a
-/// pause — LRCLIB is a free community server. Outcomes are cached on disk
+/// three-second pause — LRCLIB is a free community server, and at a 0.4s
+/// pace it answered 429/503 to this address for 165 of 380 songs. The run
+/// stops at the second throttled answer in a row.
+///
+/// The catalogue lists an artist's newest songs first, so this samples new
+/// releases — the songs LRCLIB is least likely to have yet. Outcomes are cached on disk
 /// (`RINGRING_EVAL_DIR`), so a rerun only asks for what changed: delete
 /// `lyrics-<artist id>.json` to ask an artist again. Artists:
 /// `RINGRING_EVAL_GROUPS` (ids or names), else every artist on the roster.
@@ -42,7 +47,8 @@ struct LyricsCoverageReportSuite {
 
         var lines: [String] = []
         var found = 0, total = 0
-        for group in groups {
+        var busyInARow = 0
+        artists: for group in groups {
             let file = cacheDir.appendingPathComponent("lyrics-\(group.id).json")
             var outcomes: [Outcome]
             if let data = try? Data(contentsOf: file), let cached = try? JSONDecoder().decode([Outcome].self, from: data) {
@@ -54,12 +60,26 @@ struct LyricsCoverageReportSuite {
                     do {
                         let sheet = try await lyrics.lyrics(artist: song.artist, title: song.title, album: song.album, duration: song.duration)
                         outcomes.append(.init(title: song.title, artist: song.artist, found: true, detail: sheet.isSynced ? "synced" : "plain"))
+                        busyInARow = 0
+                    } catch LRCLIBClient.Failure.serverBusy(let status) {
+                        // Throttled: an answer about this address, not the song.
+                        busyInARow += 1
+                        outcomes.append(.init(title: song.title, artist: song.artist, found: false, detail: "serverBusy(\(status))"))
+                        if busyInARow >= 2 {
+                            lines.append("— LRCLIB is throttling (\(status)); stopped at \(group.name). Rerun later; finished artists are cached.")
+                            break artists
+                        }
                     } catch {
                         outcomes.append(.init(title: song.title, artist: song.artist, found: false, detail: "\(error)"))
+                        busyInARow = 0
                     }
-                    try await Task.sleep(for: .milliseconds(400))
+                    try await Task.sleep(for: .seconds(3))
                 }
-                try? JSONEncoder().encode(outcomes).write(to: file)
+                // A throttled answer is not a result; that artist is asked
+                // again on the next run.
+                if !outcomes.contains(where: { $0.detail.hasPrefix("serverBusy") }) {
+                    try? JSONEncoder().encode(outcomes).write(to: file)
+                }
             }
             let hits = outcomes.filter(\.found).count
             found += hits

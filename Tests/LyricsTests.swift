@@ -438,6 +438,26 @@ struct LyricsServerBusyTests {
         #expect(ScriptedLRCLIB.requests == 2)
     }
 
+    /// 429 is LRCLIB saying this address asked too much. Asking again a
+    /// second later is asking too much again.
+    @Test("429면 다시 묻지 않고 바로 바쁘다고 알린다")
+    func doesNotRetryWhenThrottled() async {
+        let session = ScriptedLRCLIB.session(statuses: [429, 200], body: sheet)
+        let client = LRCLIBClient(session: session, retryDelay: .zero)
+        do {
+            _ = try await client.lyrics(artist: "テスト", title: "テスト")
+            Issue.record("제한에 걸렸는데 가사를 받았다")
+        } catch let failure as LRCLIBClient.Failure {
+            guard case .serverBusy(429) = failure else {
+                Issue.record("serverBusy(429)가 아니라 \(failure)")
+                return
+            }
+        } catch {
+            Issue.record("예상하지 못한 오류 \(error)")
+        }
+        #expect(ScriptedLRCLIB.requests == 1)
+    }
+
     /// Every spelling hit the same dead server before; now the first answer
     /// that says the server is down ends the lookup, with words a reader can
     /// act on instead of 「LRCLIB 오류 (503)」.
